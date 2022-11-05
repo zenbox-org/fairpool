@@ -1,27 +1,27 @@
-import { Language } from '../../../generic/models/Language'
 import { Optional } from 'ts-toolbelt/out/Object/Optional'
-import { parsePerson, Person } from '../Person'
 import { Mapper } from 'zenbox-util/lodash'
 import { Contact } from '../../../generic/models/Contact'
+import { Language } from '../../../generic/models/Language'
+import { parsePerson, Person } from '../Person'
 
-export const mapPersonFL = <T>(map: Mapper<Person, T>) => (firstname: string, lastname: string, nickname = firstname, language: Language, contacts: Contact[] = [], person: Optional<Person, 'uid' | 'name' | 'nickname' | 'language' | 'contacts'> = {}) => map({
+export const mapPersonFL = <T>(map: Mapper<Person, T>) => (firstname: string, lastname: string, shortname = firstname, language: Language, contacts: Contact[] = [], person: Optional<Person, 'uid' | 'name' | 'shortname' | 'language' | 'contacts'> = {}) => map({
   uid: `${firstname}${lastname}`,
   name: firstname + ' ' + lastname,
-  nickname,
+  shortname,
   language,
   contacts,
   ...person,
 })
 
-export const mapPersonN = <T>(map: Mapper<Person, T>) => (nickname: string, language: Language, contacts: Contact[] = [], person: Optional<Person, 'uid' | 'nickname' | 'language' | 'contacts'> = {}) => map({
-  uid: nickname,
-  nickname,
+export const mapPersonN = <T>(map: Mapper<Person, T>) => (shortname: string, language: Language, contacts: Contact[] = [], person: Optional<Person, 'uid' | 'shortname' | 'language' | 'contacts'> = {}) => map({
+  uid: shortname,
+  shortname,
   language,
   contacts,
   ...person,
 })
 
-export const mapPersonU = <T>(map: Mapper<Person, T>) => (uid: string, language: Language, contacts: Contact[] = [], person: Optional<Person, 'uid' | 'nickname' | 'language' | 'contacts'> = {}) => map({
+export const mapPersonU = <T>(map: Mapper<Person, T>) => (uid: string, language: Language, contacts: Contact[] = [], person: Optional<Person, 'uid' | 'shortname' | 'language' | 'contacts'> = {}) => map({
   uid,
   language,
   contacts,

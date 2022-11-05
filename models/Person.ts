@@ -1,13 +1,13 @@
-import { z } from 'zod'
-import * as $ from '../../generic/models/Person'
 import { getDuplicatesRefinement } from 'zenbox-util/zod'
-import { NameSchema } from '../../generic/models/Name'
+import { z } from 'zod'
 import { LanguageSchema } from '../../generic/models/Language'
+import { NameSchema } from '../../generic/models/Name'
 import { NotesSchema } from '../../generic/models/Notes'
+import * as $ from '../../generic/models/Person'
 
 export const PersonSchema = $.PersonSchema.extend({
   name: $.PersonSchema.shape.name.optional(), // we can't get the names of some influencers
-  nickname: NameSchema.optional(),
+  shortname: NameSchema.optional(),
   language: LanguageSchema,
   notes: NotesSchema,
 })

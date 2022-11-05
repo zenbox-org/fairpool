@@ -2,6 +2,7 @@ import { isEqualBy, Mapper } from 'zenbox-util/lodash'
 import { getDuplicatesRefinement } from 'zenbox-util/zod'
 import { z } from 'zod'
 import { TickerSchema } from '../../finance/models/Ticker'
+import { NameSchema } from '../../generic/models/Name'
 import { NotesSchema } from '../../generic/models/Notes'
 import { UrlSchema } from '../../generic/models/Url'
 import * as $ from '../../influencer-marketing/models/Influencer'
@@ -13,6 +14,7 @@ export const InfluencerSchema = $.InfluencerSchema.extend({
   channels: z.array(SocialChannelSchema),
   website: UrlSchema.optional(),
   person: PersonSchema,
+  username: NameSchema,
   symbol: TickerSchema,
   tags: InfluencerTagsSchema,
   antiBotPhrase: z.string().optional().describe('Used by some influencers to avoid getting spammed by bots'),
@@ -21,6 +23,7 @@ export const InfluencerSchema = $.InfluencerSchema.extend({
 
 export const InfluencersSchema = z.array(InfluencerSchema)
   .superRefine(getDuplicatesRefinement('Influencer', parseInfluencerUid))
+  .superRefine(getDuplicatesRefinement('Influencer', i => i.username))
 
 export const InfluencerUidSchema = $.InfluencerUidSchema
 
