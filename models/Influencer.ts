@@ -2,6 +2,7 @@ import { isEqualBy, Mapper } from 'zenbox-util/lodash'
 import { getDuplicatesRefinement } from 'zenbox-util/zod'
 import { z } from 'zod'
 import { TickerSchema } from '../../finance/models/Ticker'
+import { DescriptionSchema } from '../../generic/models/Description'
 import { NameSchema } from '../../generic/models/Name'
 import { NotesSchema } from '../../generic/models/Notes'
 import { UrlSchema } from '../../generic/models/Url'
@@ -17,6 +18,7 @@ export const InfluencerSchema = $.InfluencerSchema.extend({
   username: NameSchema,
   title: NameSchema,
   symbol: TickerSchema,
+  description: DescriptionSchema.optional(),
   tags: InfluencerTagsSchema,
   antiBotPhrase: z.string().optional().describe('Used by some influencers to avoid getting spammed by bots'),
   notes: NotesSchema,
