@@ -15,6 +15,7 @@ export const InfluencerSchema = $.InfluencerSchema.extend({
   website: UrlSchema.optional(),
   person: PersonSchema,
   username: NameSchema,
+  title: NameSchema,
   symbol: TickerSchema,
   tags: InfluencerTagsSchema,
   antiBotPhrase: z.string().optional().describe('Used by some influencers to avoid getting spammed by bots'),
