@@ -21,6 +21,7 @@ export const InfluencerSchema = $.InfluencerSchema.extend({
   description: DescriptionSchema.optional(),
   tags: InfluencerTagsSchema,
   antiBotPhrase: z.string().optional().describe('Used by some influencers to avoid getting spammed by bots'),
+  pageCheckedAt: z.date().optional(),
   notes: NotesSchema,
 })
 
