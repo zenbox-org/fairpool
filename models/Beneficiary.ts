@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { getArraySchema } from 'zenbox-util/zod'
-import { isEqualBy } from 'zenbox-util/lodash'
+import { isEqualByD } from 'zenbox-util/lodash'
 import { AddressSchema } from '../../ethereum/models/Address'
 import { UintSchema } from '../../ethereum/models/Uint'
 
@@ -31,4 +31,4 @@ export function parseBeneficiaryUid(beneficiaryUid: BeneficiaryUid): Beneficiary
   return BeneficiaryUidSchema.parse(beneficiaryUid)
 }
 
-export const isEqualBeneficiary = (a: Beneficiary) => (b: Beneficiary) => isEqualBy(a, b, parseBeneficiaryUid)
+export const isEqualBeneficiary = (a: Beneficiary) => (b: Beneficiary) => isEqualByD(a, b, parseBeneficiaryUid)

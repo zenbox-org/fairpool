@@ -1,5 +1,5 @@
 import { IdSchema } from 'libs/generic/models/Id'
-import { isEqualBy } from 'zenbox-util/lodash'
+import { isEqualByD } from 'zenbox-util/lodash'
 import { getDuplicatesRefinement } from 'zenbox-util/zod'
 import { z } from 'zod'
 
@@ -34,4 +34,4 @@ export function parseInfluencerTagUid(tagUid: InfluencerTagUid): InfluencerTagUi
   return InfluencerTagUidSchema.parse(tagUid)
 }
 
-export const isEqualInfluencerTag = (a: InfluencerTag) => (b: InfluencerTag) => isEqualBy(a, b, parseInfluencerTagUid)
+export const isEqualInfluencerTag = (a: InfluencerTag) => (b: InfluencerTag) => isEqualByD(a, b, parseInfluencerTagUid)

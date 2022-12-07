@@ -1,4 +1,4 @@
-import { isEqualBy } from 'zenbox-util/lodash'
+import { isEqualByD } from 'zenbox-util/lodash'
 import { getDuplicatesRefinement } from 'zenbox-util/zod'
 import { z } from 'zod'
 import { Url } from '../../generic/models/Url'
@@ -36,7 +36,7 @@ export function parseSocialChannelUid(channelUid: SocialChannelUid): SocialChann
   return SocialChannelUidSchema.parse(channelUid)
 }
 
-export const isEqualSocialChannel = (a: SocialChannel) => (b: SocialChannel) => isEqualBy(a, b, parseSocialChannelUid)
+export const isEqualSocialChannel = (a: SocialChannel) => (b: SocialChannel) => isEqualByD(a, b, parseSocialChannelUid)
 
 export const parseChannelByUrl = (url: Url, followerCount: number, followerCountEstimatedAt: Date) => {
   return parseSocialChannel({

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { getArraySchema } from 'zenbox-util/zod'
-import { isEqualBy } from 'zenbox-util/lodash'
+import { isEqualByD } from 'zenbox-util/lodash'
 import { BN } from '../../bn'
 
 export const TradeAmountSchema = z.instanceof(BN)
@@ -27,4 +27,4 @@ export function parseTradeAmountUid(amountUid: TradeAmountUid): TradeAmountUid {
   return TradeAmountUidSchema.parse(amountUid)
 }
 
-export const isEqualTradeAmount = (a: TradeAmount) => (b: TradeAmount) => isEqualBy(a, b, parseTradeAmountUid)
+export const isEqualTradeAmount = (a: TradeAmount) => (b: TradeAmount) => isEqualByD(a, b, parseTradeAmountUid)

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { getArraySchema } from 'zenbox-util/zod'
-import { isEqualBy } from 'zenbox-util/lodash'
+import { isEqualByD } from 'zenbox-util/lodash'
 import { TassetSchema } from '../../finance/models/Tasset'
 import { TradeAmountSchema } from './TradeAmount'
 import { TradeTransactionSchema, TradeTransactionUidSchema } from './TradeTransaction'
@@ -39,7 +39,7 @@ export function parseTradeUid(tradeUid: TradeUid): TradeUid {
   return TradeUidSchema.parse(tradeUid)
 }
 
-export const isEqualTrade = (a: Trade) => (b: Trade) => isEqualBy(a, b, parseTradeUid)
+export const isEqualTrade = (a: Trade) => (b: Trade) => isEqualByD(a, b, parseTradeUid)
 
 export const isBuy = (trade: Trade) => !isSell(trade)
 

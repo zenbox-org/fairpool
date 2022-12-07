@@ -1,4 +1,4 @@
-import { isEqualBy } from 'zenbox-util/lodash'
+import { isEqualByD } from 'zenbox-util/lodash'
 import { getArraySchema } from 'zenbox-util/zod'
 import { z } from 'zod'
 import { BN } from '../../bn'
@@ -27,4 +27,4 @@ export function parseVolumeAmountUid(amountUid: VolumeAmountUid): VolumeAmountUi
   return VolumeAmountUidSchema.parse(amountUid)
 }
 
-export const isEqualVolumeAmount = (a: VolumeAmount) => (b: VolumeAmount) => isEqualBy(a, b, parseVolumeAmountUid)
+export const isEqualVolumeAmount = (a: VolumeAmount) => (b: VolumeAmount) => isEqualByD(a, b, parseVolumeAmountUid)

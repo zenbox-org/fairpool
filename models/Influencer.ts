@@ -1,4 +1,4 @@
-import { isEqualBy, Mapper } from 'zenbox-util/lodash'
+import { isEqualByD, Mapper } from 'zenbox-util/lodash'
 import { getDuplicatesRefinement } from 'zenbox-util/zod'
 import { z } from 'zod'
 import { TickerSchema } from '../../finance/models/Ticker'
@@ -47,7 +47,7 @@ export function parseInfluencerUid(influencerUid: InfluencerUid): InfluencerUid 
   return InfluencerUidSchema.parse(influencerUid)
 }
 
-export const isEqualInfluencer = (a: Influencer) => (b: Influencer) => isEqualBy(a, b, parseInfluencerUid)
+export const isEqualInfluencer = (a: Influencer) => (b: Influencer) => isEqualByD(a, b, parseInfluencerUid)
 
 // export type InfluencerOptional = Optional<Influencer, 'channels' | 'tags'>
 export type InfluencerOptional = Influencer

@@ -1,4 +1,4 @@
-import { isEqualBy } from 'zenbox-util/lodash'
+import { isEqualByD } from 'zenbox-util/lodash'
 import { getArraySchema } from 'zenbox-util/zod'
 import { z } from 'zod'
 import { TokenSchema, TokenUidSchema } from './Token'
@@ -32,4 +32,4 @@ export function parseTokenInfoUid(infoUid: TokenInfoUid): TokenInfoUid {
   return TokenInfoUidSchema.parse(infoUid)
 }
 
-export const isEqualTokenInfo = (a: TokenInfo) => (b: TokenInfo) => isEqualBy(a, b, parseTokenInfoUid)
+export const isEqualTokenInfo = (a: TokenInfo) => (b: TokenInfo) => isEqualByD(a, b, parseTokenInfoUid)

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { getArraySchema } from 'zenbox-util/zod'
-import { isEqualBy } from 'zenbox-util/lodash'
+import { isEqualByD } from 'zenbox-util/lodash'
 import { TransactionHashSchema } from '../../ethereum/models/TransactionHash'
 import { AddressSchema } from '../../ethereum/models/Address'
 import { TimestampSchema } from '../../generic/models/Timestamp'
@@ -33,4 +33,4 @@ export function parseTradeTransactionUid(transactionUid: TradeTransactionUid): T
   return TradeTransactionUidSchema.parse(transactionUid)
 }
 
-export const isEqualTradeTransaction = (a: TradeTransaction) => (b: TradeTransaction) => isEqualBy(a, b, parseTradeTransactionUid)
+export const isEqualTradeTransaction = (a: TradeTransaction) => (b: TradeTransaction) => isEqualByD(a, b, parseTradeTransactionUid)
