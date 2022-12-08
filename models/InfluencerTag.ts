@@ -1,6 +1,6 @@
 import { IdSchema } from 'libs/generic/models/Id'
-import { isEqualByD } from 'zenbox-util/lodash'
-import { getDuplicatesRefinement } from 'zenbox-util/zod'
+import { isEqualByD } from 'libs/utils/lodash'
+import { getDuplicatesRefinement } from 'libs/utils/zod'
 import { z } from 'zod'
 
 export interface InfluencerTag {

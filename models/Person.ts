@@ -1,4 +1,4 @@
-import { getDuplicatesRefinement } from 'zenbox-util/zod'
+import { getDuplicatesRefinement } from 'libs/utils/zod'
 import { z } from 'zod'
 import { LanguageSchema } from '../../generic/models/Language'
 import { NameSchema } from '../../generic/models/Name'

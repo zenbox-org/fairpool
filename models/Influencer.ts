@@ -1,5 +1,5 @@
-import { isEqualByD, Mapper } from 'zenbox-util/lodash'
-import { getDuplicatesRefinement } from 'zenbox-util/zod'
+import { isEqualByD, Mapper } from 'libs/utils/lodash'
+import { getDuplicatesRefinement } from 'libs/utils/zod'
 import { z } from 'zod'
 import { TickerSchema } from '../../finance/models/Ticker'
 import { DescriptionSchema } from '../../generic/models/Description'

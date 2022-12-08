@@ -1,4 +1,4 @@
-import { ensure } from 'zenbox-util/ensure'
+import { ensure } from 'libs/utils/ensure'
 import { fromStringToId } from '../../../generic/models/Id'
 
 export function spreadName(firstName?: string, lastName?: string, shortname?: string, uid?: string) {

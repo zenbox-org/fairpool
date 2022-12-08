@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { getArraySchema } from 'zenbox-util/zod'
-import { isEqualByD } from 'zenbox-util/lodash'
+import { getArraySchema } from 'libs/utils/zod'
+import { isEqualByD } from 'libs/utils/lodash'
 import { TassetSchema } from '../../finance/models/Tasset'
 import { TradeAmountSchema } from './TradeAmount'
 import { TradeTransactionSchema, TradeTransactionUidSchema } from './TradeTransaction'

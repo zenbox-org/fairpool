@@ -1,6 +1,6 @@
 import { sortBy } from 'lodash-es'
-import { expect } from 'zenbox-util/chai'
-import { todo } from 'zenbox-util/todo'
+import { expect } from 'libs/utils/chai'
+import { todo } from 'libs/utils/todo'
 import { TokenInfo } from '../models/TokenInfo'
 
 export async function getTokenInfos(query: string | undefined) {

@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { getArraySchema } from 'zenbox-util/zod'
-import { isEqualByD } from 'zenbox-util/lodash'
+import { getArraySchema } from 'libs/utils/zod'
+import { isEqualByD } from 'libs/utils/lodash'
 import { AddressSchema } from '../../ethereum/models/Address'
 import { UintSchema } from '../../ethereum/models/Uint'
 import { BeneficiariesSchema } from './Beneficiary'

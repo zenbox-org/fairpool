@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash-es'
-import { ensure } from 'zenbox-util/ensure'
+import { ensure } from 'libs/utils/ensure'
 import { SocialChannelType } from '../../../social/models/SocialChannelType'
 import { Influencer } from '../Influencer'
 
