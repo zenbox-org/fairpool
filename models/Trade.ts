@@ -1,7 +1,7 @@
-import { z } from 'zod'
-import { getArraySchema } from 'libs/utils/zod'
 import { isEqualByD } from 'libs/utils/lodash'
-import { TassetSchema } from '../../finance/models/Tasset'
+import { getArraySchema } from 'libs/utils/zod'
+import { z } from 'zod'
+import { AssetSchema } from '../../finance/models/Asset'
 import { TradeAmountSchema } from './TradeAmount'
 import { TradeTransactionSchema, TradeTransactionUidSchema } from './TradeTransaction'
 
@@ -10,8 +10,8 @@ import { TradeTransactionSchema, TradeTransactionUidSchema } from './TradeTransa
  * baseAmount is negative -> trade is a sell
  */
 export const TradeSchema = z.object({
-  baseTasset: TassetSchema,
-  quoteTasset: TassetSchema,
+  baseAsset: AssetSchema,
+  quoteAsset: AssetSchema,
   baseAmount: TradeAmountSchema,
   quoteAmount: TradeAmountSchema,
   transaction: TradeTransactionSchema,

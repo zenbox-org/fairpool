@@ -2,11 +2,13 @@ import { isEqualByDC } from 'libs/utils/lodash'
 import { getArraySchema } from 'libs/utils/zod'
 import { z } from 'zod'
 import { AddressSchema } from '../../../ethereum/models/Address'
+import { BagsByAssetSchema } from '../../../finance/models/Bag'
 import { IdxSchema } from '../../../generic/models/Idx'
 
 export const WalletSchema = z.object({
   address: AddressSchema,
   userId: IdxSchema,
+  bags: BagsByAssetSchema,
 }).describe('Wallet')
 
 export const WalletUidSchema = WalletSchema.pick({

@@ -13,6 +13,7 @@ export const createWallet: Transition<CreateWallet, State> = ({ userId }) => asy
   state.wallets.push({
     address,
     userId,
+    bags: [],
   })
   return parseState(state)
 }
