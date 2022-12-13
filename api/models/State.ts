@@ -1,12 +1,14 @@
 import { intersection } from 'remeda'
 import { z } from 'zod'
 import { toAddresses } from '../../../ethereum/models/Address'
+import { AssetsSchema } from '../../../finance/models/Asset'
 import { TokensSchema } from '../../models/Token'
 import { SessionsSchema } from './Session'
 import { UsersSchema } from './User'
 import { WalletsSchema } from './Wallet'
 
 export const StateSchema = z.object({
+  assets: AssetsSchema,
   tokens: TokensSchema,
   sessions: SessionsSchema,
   wallets: WalletsSchema,

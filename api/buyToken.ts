@@ -1,13 +1,16 @@
 import { z } from 'zod'
-import { bn } from '../../bn/utils'
-import { ensureByIndex } from '../../utils/ensure'
-import { TokenParamsSchema } from '../models/Token'
+import { AmountPositiveBNSchema } from '../../ethereum/models/AmountPositiveBN'
+import { IdxSchema } from '../../generic/models/Idx'
 import { toFairpoolTransition } from '../toFairpoolTransition'
 import { SessionParamsSchema } from './models/SessionParams'
-import { getAddressFromIndex } from './utils/getAddressFromIndex'
+import { getTokenInfo } from './utils/getWalletInfo'
 
 export const BuyTokenSchema = SessionParamsSchema
-  .merge(TokenParamsSchema)
+  .extend({
+    walletId: IdxSchema,
+    tokenId: IdxSchema,
+    amount: AmountPositiveBNSchema,
+  })
   .describe('CreateToken')
 
 export type CreateToken = z.infer<typeof BuyTokenSchema>
@@ -17,17 +20,16 @@ export function parseCreateToken(token: CreateToken): CreateToken {
 }
 
 export const buyToken = toFairpoolTransition(BuyTokenSchema)((params) => async (state) => {
-  const { sessionId } = params
-  const session = ensureByIndex(state.sessions, sessionId)
-  const user = ensureByIndex(state.users, session.userId)
-  const wallets = state.wallets.filter(w => w.userId === session.userId)
-  const address = getAddressFromIndex(state.addressIndex++)
-  if (!wallets.find(w => w.address === params.owner)) throw new Error('Token owner must be a user-owned wallet')
-  state.tokens.push({
-    ...params,
-    address,
-    decimals: bn(18),
-    balances: [],
-  })
+  const { token, wallet, session, user } = getTokenInfo(params, state)
+  const { amount } = params
+  if (amount.gt(wallet.amount)) throw new Error('Cannot buy for higher amount than available on wallet')
+  // TODO: sub wallet amount, add token wallet amount
+  // TODO: change token balances
+  // state.tokens.push({
+  //   ...params,
+  //   address,
+  //   decimals: bn(18),
+  //   balances: [],
+  // })
   return state
 })

@@ -1,19 +1,21 @@
 import { z } from 'zod'
 import { Transition } from '../../divide-and-conquer/Transition'
+import { AmountBNSchema } from '../../ethereum/models/AmountBN'
 import { parseState, State } from './models/State'
 import { UserParamsSchema } from './models/UserParams'
 import { getAddressFromIndex } from './utils/getAddressFromIndex'
 
-export const CreateWalletSchema = UserParamsSchema.describe('CreateSession')
+export const CreateWalletSchema = UserParamsSchema.extend({
+  amount: AmountBNSchema,
+}).describe('CreateSession')
 
 export type CreateWallet = z.infer<typeof CreateWalletSchema>
 
-export const createWallet: Transition<CreateWallet, State> = ({ userId }) => async (state) => {
+export const createWallet: Transition<CreateWallet, State> = (params) => async (state) => {
   const address = getAddressFromIndex(state.addressIndex++)
   state.wallets.push({
+    ...params,
     address,
-    userId,
-    bags: [],
   })
   return parseState(state)
 }
