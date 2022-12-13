@@ -1,5 +1,5 @@
-import { Optional } from 'ts-toolbelt/out/Object/Optional'
 import { Mapper } from 'libs/utils/lodash'
+import { Optional } from 'ts-toolbelt/out/Object/Optional'
 import { Contact } from '../../../generic/models/Contact'
 import { Language } from '../../../generic/models/Language'
 import { parsePerson, Person } from '../Person'

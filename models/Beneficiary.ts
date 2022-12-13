@@ -1,12 +1,12 @@
-import { z } from 'zod'
-import { getArraySchema } from 'libs/utils/zod'
 import { isEqualByD } from 'libs/utils/lodash'
+import { getArraySchema } from 'libs/utils/zod'
+import { z } from 'zod'
 import { AddressSchema } from '../../ethereum/models/Address'
-import { UintSchema } from '../../ethereum/models/Uint'
+import { AmountUint256BNSchema } from '../../ethereum/models/AmountUint256BN'
 
 export const BeneficiarySchema = z.object({
   address: AddressSchema,
-  share: UintSchema,
+  share: AmountUint256BNSchema,
 }).describe('Beneficiary')
 
 export const BeneficiaryUidSchema = BeneficiarySchema.pick({

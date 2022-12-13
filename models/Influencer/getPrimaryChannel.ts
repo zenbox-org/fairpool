@@ -1,5 +1,5 @@
-import { isEqual } from 'lodash-es'
 import { ensure } from 'libs/utils/ensure'
+import { isEqual } from 'lodash-es'
 import { SocialChannelType } from '../../../social/models/SocialChannelType'
 import { Influencer } from '../Influencer'
 

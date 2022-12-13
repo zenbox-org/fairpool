@@ -1,8 +1,8 @@
-import { z } from 'zod'
-import { getArraySchema } from 'libs/utils/zod'
 import { isEqualByD } from 'libs/utils/lodash'
-import { TransactionHashSchema } from '../../ethereum/models/TransactionHash'
+import { getArraySchema } from 'libs/utils/zod'
+import { z } from 'zod'
 import { AddressSchema } from '../../ethereum/models/Address'
+import { TransactionHashSchema } from '../../ethereum/models/TransactionHash'
 import { TimestampSchema } from '../../generic/models/Timestamp'
 
 export const TradeTransactionSchema = z.object({

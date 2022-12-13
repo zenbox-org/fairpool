@@ -26,6 +26,7 @@ export const createToken = toFairpoolTransition(CreateTokenSchema)((params) => a
   state.tokens.push({
     ...params,
     address,
+    amount: bn(0),
     decimals: bn(18),
     balances: [],
   })

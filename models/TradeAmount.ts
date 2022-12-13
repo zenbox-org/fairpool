@@ -1,6 +1,6 @@
-import { z } from 'zod'
-import { getArraySchema } from 'libs/utils/zod'
 import { isEqualByD } from 'libs/utils/lodash'
+import { getArraySchema } from 'libs/utils/zod'
+import { z } from 'zod'
 import { BN } from '../../bn'
 
 export const TradeAmountSchema = z.instanceof(BN)

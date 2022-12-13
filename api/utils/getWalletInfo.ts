@@ -33,8 +33,11 @@ export function getWalletInfo(params: WalletInfoParams, state: State) {
 
 export function getTokenInfo(params: TokenInfoParams, state: State) {
   const info = getWalletInfo(params, state)
+  const token = ensureByIndex(state.tokens, params.tokenId)
+  // const walletOfToken = ensureFind(state.wallets, w => w.address === token.address)
   return {
     ...info,
-    token: ensureByIndex(state.tokens, params.tokenId),
+    token,
+    // walletOfToken,
   }
 }

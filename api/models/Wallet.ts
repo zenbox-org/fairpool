@@ -2,12 +2,13 @@ import { isEqualByDC } from 'libs/utils/lodash'
 import { getArraySchema } from 'libs/utils/zod'
 import { z } from 'zod'
 import { AddressSchema } from '../../../ethereum/models/Address'
-import { AmountBNSchema } from '../../../ethereum/models/AmountBN'
+import { AmountUint256BNSchema } from '../../../ethereum/models/AmountUint256BN'
+import { BalanceBNSchema } from '../../../ethereum/models/BalanceBN'
 import { IdxSchema } from '../../../generic/models/Idx'
 
-export const WalletSchema = z.object({
+export const WalletSchema = BalanceBNSchema.extend({
   address: AddressSchema,
-  amount: AmountBNSchema, // of native blockchain currency
+  amount: AmountUint256BNSchema, // of native blockchain currency
   userId: IdxSchema,
 }).describe('Wallet')
 
