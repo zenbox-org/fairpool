@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { addUint, subUint } from '../../ethereum/math'
 import { AmountBN } from '../../ethereum/models/AmountBN'
+import { sumAmountBNs } from '../../ethereum/models/AmountBN/sumAmountBNs'
 import { AmountPositiveBNSchema } from '../../ethereum/models/AmountPositiveBN'
 import { BalanceUint256BN } from '../../ethereum/models/BalanceUint256BN'
 import { IdxSchema } from '../../generic/models/Idx'
@@ -33,6 +34,7 @@ export const buyToken = toFairpoolTransition(BuyTokenSchema)((params) => async (
   if (amount.gt(wallet.amount)) throw new Error('Cannot buy for higher amount than available on wallet')
   moveAmount(amount, wallet, token)
   const quoteNew = token.amount
+  const baseOld = sumAmountBNs(token.balances)
   // uint quoteAmount = address(this).balance;
   // uint baseAmount = totalSupply();
   // uint quoteFinal = quoteAmount + quoteDelta;
