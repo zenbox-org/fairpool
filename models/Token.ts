@@ -1,26 +1,29 @@
-import { z } from 'zod'
-import { getArraySchema } from 'libs/utils/zod'
 import { isEqualByD } from 'libs/utils/lodash'
+import { getArraySchema } from 'libs/utils/zod'
+import { z } from 'zod'
 import { AddressSchema } from '../../ethereum/models/Address'
-import { UintSchema } from '../../ethereum/models/Uint'
-import { BeneficiariesSchema } from './Beneficiary'
 import { BalancesBNSchema } from '../../ethereum/models/BalanceBN'
+import { UintSchema } from '../../ethereum/models/Uint'
 import { NameSchema } from '../../generic/models/Name'
+import { BeneficiariesSchema } from './Beneficiary'
 
-export const TokenSchema = z.object({
-  address: AddressSchema,
+export const TokenParamsSchema = z.object({
   name: NameSchema,
   symbol: NameSchema,
-  decimals: UintSchema,
-  owner: AddressSchema,
   speed: UintSchema,
   tax: UintSchema,
   beneficiaries: BeneficiariesSchema,
+  owner: AddressSchema,
+})
+
+export const TokenSchema = TokenParamsSchema.extend({
+  address: AddressSchema,
+  decimals: UintSchema,
   balances: BalancesBNSchema,
 }).describe('Token')
 
 export const TokenUidSchema = TokenSchema.pick({
-
+  address: true,
 })
 
 export const TokensSchema = getArraySchema(TokenSchema, parseTokenUid)
