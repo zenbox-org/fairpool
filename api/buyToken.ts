@@ -1,51 +1,58 @@
+import { clone } from 'remeda'
 import { z } from 'zod'
-import { addUint, subUint } from '../../ethereum/math'
-import { AmountBN } from '../../ethereum/models/AmountBN'
-import { sumAmountBNs } from '../../ethereum/models/AmountBN/sumAmountBNs'
 import { AmountPositiveBNSchema } from '../../ethereum/models/AmountPositiveBN'
-import { BalanceUint256BN } from '../../ethereum/models/BalanceUint256BN'
 import { IdxSchema } from '../../generic/models/Idx'
+import { isEqualByD } from '../../utils/lodash'
+import { getScale } from '../models/Token/getScale'
+import { getTotalSupply } from '../models/Token/getTotalSupply'
 import { toFairpoolTransition } from '../toFairpoolTransition'
 import { SessionParamsSchema } from './models/SessionParams'
-import { getTokenInfo } from './utils/getWalletInfo'
+import { State, StateSchema } from './models/State'
+import { getBaseFromQuote } from './utils/conversion'
+import { getNativeTotalSupply } from './utils/getNativeTotalSupply'
+import { getTokenInfo, getTokenTotalSupply } from './utils/getWalletInfo'
+import { moveAmount } from './utils/moveAmount'
+import { addBalance } from './utils/updateBalance'
 
 export const BuyTokenSchema = SessionParamsSchema
   .extend({
     walletId: IdxSchema,
     tokenId: IdxSchema,
-    amount: AmountPositiveBNSchema,
+    quoteAmount: AmountPositiveBNSchema,
   })
-  .describe('CreateToken')
+  .describe('BuyToken')
 
-export type CreateToken = z.infer<typeof BuyTokenSchema>
+export type BuyToken = z.infer<typeof BuyTokenSchema>
 
-export function parseCreateToken(token: CreateToken): CreateToken {
+export function parseCreateToken(token: BuyToken): BuyToken {
   return BuyTokenSchema.parse(token)
 }
 
-function moveAmount(amount: AmountBN, from: BalanceUint256BN, to: BalanceUint256BN) {
-  from.amount = subUint(from.amount, amount)
-  to.amount = addUint(to.amount, amount)
-}
+export const BuyTokenValidationSchema = z.object({
+  params: BuyTokenSchema,
+  stateOld: StateSchema,
+  stateNew: StateSchema,
+})
+  .refine(({ stateOld, stateNew }) => isEqualByD(stateOld, stateNew, getNativeTotalSupply))
+  .refine(({ params, stateOld, stateNew }) => getTokenTotalSupply(params, stateOld).lt(getTokenTotalSupply(params, stateNew)))
 
 export const buyToken = toFairpoolTransition(BuyTokenSchema)((params) => async (state) => {
   const { token, wallet, session, user } = getTokenInfo(params, state)
-  const { amount } = params
-  if (amount.gt(wallet.amount)) throw new Error('Cannot buy for higher amount than available on wallet')
-  moveAmount(amount, wallet, token)
+  const { quoteAmount } = params
+  const { amount: quoteAmountCurrent } = wallet
+  const stateOld = clone(state)
+  if (quoteAmount.gt(quoteAmountCurrent)) throw new Error('Cannot buy for higher amount than available on wallet')
+  moveAmount(quoteAmount, wallet, token)
   const quoteNew = token.amount
-  const baseOld = sumAmountBNs(token.balances)
-  // uint quoteAmount = address(this).balance;
-  // uint baseAmount = totalSupply();
-  // uint quoteFinal = quoteAmount + quoteDelta;
-  // uint baseFinal = (quoteFinal.sqrt() * scale) / speed;
-  // return baseFinal - baseAmount;
-  // TODO: change token balances
-  // state.tokens.push({
-  //   ...params,
-  //   address,
-  //   decimals: bn(18),
-  //   balances: [],
-  // })
-  return state
+  const speed = token.speed
+  const scale = getScale(token)
+  const baseNew = getBaseFromQuote(quoteNew, speed, scale) // NOTE: this sqrt implementation may be different from Solidity sqrt implementation
+  const baseOld = getTotalSupply(token)
+  const baseDelta = baseNew.sub(baseOld)
+  addBalance(token, wallet.address, baseDelta)
+  return validateBuyToken(stateOld)(params)(state)
 })
+
+const validateBuyToken = (stateOld: State) => (params: BuyToken) => (state: State) => {
+  return state
+}

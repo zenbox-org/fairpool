@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { Transition } from '../../divide-and-conquer/Transition'
-import { parseState, State } from './models/State'
+import { State } from './models/State'
 import { UserParamsSchema } from './models/UserParams'
 
 export const CreateSessionSchema = UserParamsSchema.describe('CreateSession')
@@ -12,5 +12,5 @@ export const createSession: Transition<CreateSession, State> = ({ userId }) => a
     userId,
     page: { type: 'Home' },
   })
-  return parseState(state)
+  return state
 }
