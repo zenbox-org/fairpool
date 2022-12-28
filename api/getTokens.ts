@@ -3,16 +3,16 @@ import { todo } from 'libs/utils/todo'
 import { sortBy } from 'remeda'
 import { Transition } from '../../divide-and-conquer/Transition'
 import { ensure, ensureByIndex } from '../../utils/ensure'
-import { TokenInfo } from '../models/TokenInfo'
 import { SessionParams } from './models/SessionParams'
 import { parseState, State } from './models/State'
+import { Token } from '../models/Token'
 
-export interface GetTokenInfos extends SessionParams {
+export interface GetTokens extends SessionParams {
   query?: string
 }
 
-export const getTokenInfos: Transition<GetTokenInfos, State> = ({ query, sessionId }) => async (state) => {
-  const infosUnsorted = await getTokenInfosUnsorted(query)
+export const getTokens: Transition<GetTokens, State> = ({ query, sessionId }) => async (state) => {
+  const infosUnsorted = await getTokensUnsorted(query)
   const infos = sortBy(infosUnsorted, t => t.quoteDailyVolume.toNumber())
   state.sessions[sessionId].page = {
     type: 'TokenInfoTable',
@@ -21,16 +21,16 @@ export const getTokenInfos: Transition<GetTokenInfos, State> = ({ query, session
   return parseState(state)
 }
 
-async function getTokenInfosUnsorted(query: string | undefined) {
-  return todo<TokenInfo[]>()
+async function getTokensUnsorted(query: string | undefined) {
+  return todo<Token[]>()
 }
 
-const test_getTokenInfos = (params: GetTokenInfos) => async (state: State) => {
-  const { sessions } = await getTokenInfos(params)(state)
+const test_getTokenInfos = (params: GetTokens) => async (state: State) => {
+  const { sessions } = await getTokens(params)(state)
   if (params.query) {
     const session = ensureByIndex(sessions, params.sessionId)
     if (session.page.type !== 'TokenInfoTable') throw new Error()
-    expect(session.page.rows.every(({ data }) => includesCaseInsensitive(data.token.name, ensure(params.query))))
+    expect(session.page.rows.every(({ data }) => includesCaseInsensitive(data.name, ensure(params.query))))
   }
 }
 

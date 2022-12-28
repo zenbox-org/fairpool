@@ -1,17 +1,23 @@
 import { isEqualByD } from 'libs/utils/lodash'
 import { getArraySchema } from 'libs/utils/zod'
 import { z } from 'zod'
-import { TokenSchema, TokenUidSchema } from './Token'
-import { VolumeAmountSchema } from './VolumeAmount'
+import { TokenSlugSchema } from './TokenSlug'
+import { UrlSchema } from '../../generic/models/Url'
+import { NameSchema } from '../../generic/models/Name'
+import { DescriptionSchema } from '../../generic/models/Description'
+import { TokenSocialChannelsSchema } from './TokenSocialChannel'
 
 export const TokenInfoSchema = z.object({
-  token: TokenSchema,
-  baseDailyVolume: VolumeAmountSchema,
-  quoteDailyVolume: VolumeAmountSchema,
+  slug: TokenSlugSchema,
+  title: NameSchema,
+  description: DescriptionSchema.optional(),
+  website: UrlSchema.optional(),
+  avatarUrl: UrlSchema,
+  channels: TokenSocialChannelsSchema,
 }).describe('TokenInfo')
 
-export const TokenInfoUidSchema = z.object({
-  token: TokenUidSchema,
+export const TokenInfoUidSchema = TokenInfoSchema.pick({
+  slug: true,
 })
 
 export const TokenInfosSchema = getArraySchema(TokenInfoSchema, parseTokenInfoUid)

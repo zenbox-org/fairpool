@@ -9,10 +9,10 @@ import { UrlSchema } from '../../generic/models/Url'
 import * as $ from '../../influencer-marketing/models/Influencer'
 import { InfluencerTagsSchema } from './InfluencerTag'
 import { PersonSchema } from './Person'
-import { SocialChannelSchema } from './SocialChannel'
+import { SocialChannelsSchema } from './SocialChannel'
 
 export const InfluencerSchema = $.InfluencerSchema.extend({
-  channels: z.array(SocialChannelSchema),
+  channels: SocialChannelsSchema,
   website: UrlSchema.optional(),
   person: PersonSchema,
   username: NameSchema,

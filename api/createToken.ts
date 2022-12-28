@@ -1,13 +1,17 @@
 import { z } from 'zod'
 import { bn } from '../../bn/utils'
 import { ensureByIndex } from '../../utils/ensure'
-import { TokenParamsSchema } from '../models/Token'
+import { TokenParamsSchema } from '../models/TokenParams'
 import { toFairpoolTransition } from '../toFairpoolTransition'
 import { SessionParamsSchema } from './models/SessionParams'
 import { getAddressFromIndex } from './utils/getAddressFromIndex'
+import { TokenInfoSchema } from '../models/TokenInfo'
+import { TokenDataSchema } from '../models/TokenData'
 
 export const CreateTokenSchema = SessionParamsSchema
   .merge(TokenParamsSchema)
+  .merge(TokenInfoSchema)
+  .merge(TokenDataSchema)
   .describe('CreateToken')
 
 export type CreateToken = z.infer<typeof CreateTokenSchema>
@@ -27,7 +31,8 @@ export const createToken = toFairpoolTransition(CreateTokenSchema)((params) => a
     ...params,
     address,
     amount: bn(0),
-    decimals: bn(18),
+    scale: bn(10).pow(6),
+    decimals: bn(6),
     balances: [],
   })
   return state

@@ -4,24 +4,19 @@ import { z } from 'zod'
 import { AddressSchema } from '../../ethereum/models/Address'
 import { AmountUint256BNSchema } from '../../ethereum/models/AmountUint256BN'
 import { BalancesBNSchema } from '../../ethereum/models/BalanceBN'
-import { NameSchema } from '../../generic/models/Name'
-import { BeneficiariesSchema } from './Beneficiary'
+import { TokenParamsSchema } from './TokenParams'
+import { TokenInfoSchema } from './TokenInfo'
+import { TokenDataSchema } from './TokenData'
 
-export const TokenParamsSchema = z.object({
-  name: NameSchema,
-  symbol: NameSchema,
-  speed: AmountUint256BNSchema,
-  tax: AmountUint256BNSchema,
-  beneficiaries: BeneficiariesSchema,
-  owner: AddressSchema,
-})
-
-export const TokenSchema = TokenParamsSchema.extend({
+export const TokenSchema = z.object({
   address: AddressSchema,
-  amount: AmountUint256BNSchema, // of native blockchain currency
-  decimals: AmountUint256BNSchema,
+  amount: AmountUint256BNSchema, // of native blockchain currency // keep it named "amount" to ensure compatibility with sumAmountBNs()
   balances: BalancesBNSchema,
-}).describe('Token')
+})
+  .merge(TokenParamsSchema)
+  .merge(TokenInfoSchema)
+  .merge(TokenDataSchema)
+  .describe('Token')
 
 export const TokenUidSchema = TokenSchema.pick({
   address: true,
