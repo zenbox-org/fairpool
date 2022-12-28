@@ -8,9 +8,6 @@ import { getBaseFromQuote, getQuoteFromBase } from './conversion'
 function getDiff(base: BN, speed: BN, scale: BN) {
   const $quote = getQuoteFromBase(base, speed, scale)
   const $base = getBaseFromQuote($quote, speed, scale)
-  console.log('base, speed, scale', base.toString(), speed.toString(), scale.toString())
-  console.log('$base', $base.toString())
-  console.log('$quote', $quote.toString())
   return $base.sub(base).abs()
 }
 
