@@ -7,6 +7,7 @@ import { SessionParamsSchema } from './models/SessionParams'
 import { getAddressFromIndex } from './utils/getAddressFromIndex'
 import { TokenInfoSchema } from '../models/TokenInfo'
 import { TokenDataSchema } from '../models/TokenData'
+import { EthMainnet } from '../../blockchain/data/allBlockchainNetworks'
 
 export const CreateTokenSchema = SessionParamsSchema
   .merge(TokenParamsSchema)
@@ -30,6 +31,7 @@ export const createToken = toFairpoolTransition(CreateTokenSchema)((params) => a
   state.tokens.push({
     ...params,
     address,
+    blockchain: EthMainnet,
     amount: bn(0),
     scale: bn(10).pow(6),
     decimals: bn(6),

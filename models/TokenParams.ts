@@ -15,6 +15,7 @@ export const TokenParamsSchema = z.object({
   fees: AmountUint256BNSchema,
   beneficiaries: BeneficiariesSchema,
   owner: AddressSchema,
+  operator: AddressSchema,
   decimals: AmountUint256BNSchema,
   scale: AmountUint256BNSchema,
 }).describe('TokenParams')

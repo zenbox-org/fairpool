@@ -1,20 +1,16 @@
 import { z } from 'zod'
 import { getArraySchema } from 'libs/utils/zod'
 import { isEqualByDC } from 'libs/utils/lodash'
-import { NameSchema } from '../../generic/models/Name'
-import { AddressSchema } from '../../ethereum/models/Address'
 import { BeneficiariesPrimitiveSchema } from './BeneficiaryPrimitive'
 import { AmountBNPrimitiveSchema } from '../../ethereum/models/AmountBNPrimitive'
+import { TokenParamsSchema } from './TokenParams'
 
-export const TokenParamsPrimitiveSchema = z.object({
-  name: NameSchema,
-  symbol: NameSchema,
+export const TokenParamsPrimitiveSchema = TokenParamsSchema.extend({
   speed: AmountBNPrimitiveSchema,
   royalties: AmountBNPrimitiveSchema,
   dividends: AmountBNPrimitiveSchema,
   fees: AmountBNPrimitiveSchema,
   beneficiaries: BeneficiariesPrimitiveSchema,
-  owner: AddressSchema,
   decimals: AmountBNPrimitiveSchema,
   scale: AmountBNPrimitiveSchema,
 }).describe('TokenParamsPrimitive')

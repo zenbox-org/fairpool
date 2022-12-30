@@ -3,10 +3,10 @@ import { TokenParamsPrimitive } from '../TokenParamsPrimitive'
 import { bn } from '../../../bn/utils'
 import { toBeneficiary } from '../BeneficiaryPrimitive/toBeneficiary'
 
-export function toTokenParams(primitive: TokenParamsPrimitive): TokenParams {
-  const { speed, royalties, dividends, fees, beneficiaries, scale, decimals } = primitive
+export function toTokenParams<T extends TokenParamsPrimitive>(input: T): T & TokenParams {
+  const { speed, royalties, dividends, fees, beneficiaries, scale, decimals } = input
   return {
-    ...primitive,
+    ...input,
     speed: bn(speed),
     royalties: bn(royalties),
     dividends: bn(dividends),
