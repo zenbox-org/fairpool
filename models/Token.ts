@@ -11,7 +11,7 @@ import { BlockchainNetworkSchema } from '../../blockchain/models/BlockchainNetwo
 
 export const TokenSchema = z.object({
   address: AddressSchema,
-  blockchain: BlockchainNetworkSchema,
+  network: BlockchainNetworkSchema,
   amount: AmountUint256BNSchema, // of native blockchain currency // keep it named "amount" to ensure compatibility with sumAmountBNs()
   balances: BalancesBNSchema,
 })
