@@ -31,7 +31,7 @@ export const createToken = toFairpoolTransition(CreateTokenSchema)((params) => a
   state.tokens.push({
     ...params,
     address,
-    blockchain: EthMainnet,
+    network: EthMainnet,
     amount: bn(0),
     scale: bn(10).pow(6),
     decimals: bn(6),
