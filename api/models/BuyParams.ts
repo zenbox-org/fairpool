@@ -31,4 +31,6 @@ export function parseBuyParamsUid(paramsUid: BuyParamsUid): BuyParamsUid {
   return BuyParamsUidSchema.parse(paramsUid)
 }
 
+export const safeParseBuyParams = BuyParamsSchema.safeParse.bind(BuyParamsSchema)
+
 export const isEqualBuyParams = isEqualByDC(parseBuyParamsUid)

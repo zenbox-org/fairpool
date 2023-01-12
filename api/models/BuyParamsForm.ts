@@ -31,4 +31,6 @@ export function parseBuyParamsFormUid(paramsUid: BuyParamsFormUid): BuyParamsFor
   return BuyParamsFormUidSchema.parse(paramsUid)
 }
 
+export const safeParseBuyParamsForm = BuyParamsFormSchema.safeParse.bind(BuyParamsFormSchema)
+
 export const isEqualBuyParamsForm = isEqualByDC(parseBuyParamsFormUid)
