@@ -13,7 +13,7 @@ export const BuyParamsSchema = z.object({
 
 export const BuyParamsUidSchema = BuyParamsSchema
 
-export const BuyParamssSchema = getArraySchema(BuyParamsSchema, parseBuyParamsUid)
+export const BuyParamsArraySchema = getArraySchema(BuyParamsSchema, parseBuyParamsUid)
 
 export type BuyParams = z.infer<typeof BuyParamsSchema>
 
@@ -23,8 +23,8 @@ export function parseBuyParams(params: BuyParams): BuyParams {
   return BuyParamsSchema.parse(params)
 }
 
-export function parseBuyParamss(paramss: BuyParams[]): BuyParams[] {
-  return BuyParamssSchema.parse(paramss)
+export function parseBuyParamsArray(paramss: BuyParams[]): BuyParams[] {
+  return BuyParamsArraySchema.parse(paramss)
 }
 
 export function parseBuyParamsUid(paramsUid: BuyParamsUid): BuyParamsUid {
