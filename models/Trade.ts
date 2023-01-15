@@ -1,25 +1,21 @@
 import { isEqualByD } from 'libs/utils/lodash'
 import { getArraySchema } from 'libs/utils/zod'
 import { z } from 'zod'
-import { AssetSchema } from '../../finance/models/Asset'
 import { TradeAmountSchema } from './TradeAmount'
-import { TradeTransactionSchema, TradeTransactionUidSchema } from './TradeTransaction'
+import { TradeTransactionSchema } from './TradeTransaction'
+import { AddressSchema } from '../../ethereum/models/Address'
 
 /**
- * baseAmount is positive -> trade is a buy
- * baseAmount is negative -> trade is a sell
+ * baseDelta is positive -> trade is a buy
+ * baseDelta is negative -> trade is a sell
  */
-export const TradeSchema = z.object({
-  baseAsset: AssetSchema,
-  quoteAsset: AssetSchema,
-  baseAmount: TradeAmountSchema,
-  quoteAmount: TradeAmountSchema,
-  transaction: TradeTransactionSchema,
+export const TradeSchema = TradeTransactionSchema.extend({
+  sender: AddressSchema,
+  baseDelta: TradeAmountSchema,
+  quoteDelta: TradeAmountSchema,
 }).describe('Trade')
 
-export const TradeUidSchema = z.object({
-  transaction: TradeTransactionUidSchema,
-})
+export const TradeUidSchema = TradeTransactionSchema
 
 export const TradesSchema = getArraySchema(TradeSchema, parseTradeUid)
 
@@ -41,6 +37,6 @@ export function parseTradeUid(tradeUid: TradeUid): TradeUid {
 
 export const isEqualTrade = (a: Trade) => (b: Trade) => isEqualByD(a, b, parseTradeUid)
 
-export const isBuy = (trade: Trade) => !isSell(trade)
+export const isBuy = (trade: Trade) => !trade.baseDelta.isNegative()
 
-export const isSell = (trade: Trade) => trade.baseAmount.isNegative()
+export const isSell = (trade: Trade) => trade.baseDelta.isNegative()

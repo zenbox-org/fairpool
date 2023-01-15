@@ -1,17 +1,17 @@
 import { isEqualByD } from 'libs/utils/lodash'
 import { getArraySchema } from 'libs/utils/zod'
 import { z } from 'zod'
-import { AddressSchema } from '../../ethereum/models/Address'
 import { TransactionHashSchema } from '../../ethereum/models/TransactionHash'
 import { TimestampSchema } from '../../generic/models/Timestamp'
 
 export const TradeTransactionSchema = z.object({
+  chainId: z.number().int(),
   hash: TransactionHashSchema,
-  sender: AddressSchema,
   timestamp: TimestampSchema,
 }).describe('TradeTransaction')
 
 export const TradeTransactionUidSchema = TradeTransactionSchema.pick({
+  chainId: true,
   hash: true,
 })
 

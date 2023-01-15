@@ -7,11 +7,11 @@ import { BalancesBNSchema } from '../../ethereum/models/BalanceBN'
 import { TokenParamsSchema } from './TokenParams'
 import { TokenInfoSchema } from './TokenInfo'
 import { TokenDataSchema } from './TokenData'
-import { BlockchainNetworkSchema } from '../../blockchain/models/BlockchainNetwork'
+import { NetworkSchema } from '../../ethereum/models/Network'
 
 export const TokenSchema = z.object({
   address: AddressSchema,
-  network: BlockchainNetworkSchema,
+  network: NetworkSchema,
   amount: AmountUint256BNSchema, // of native blockchain currency // keep it named "amount" to ensure compatibility with sumAmountBNs()
   balances: BalancesBNSchema,
 })
