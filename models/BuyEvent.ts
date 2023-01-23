@@ -38,3 +38,11 @@ export const isEqualBuyEvent = isEqualByDC(parseBuyEventUid)
 
 // Buy(address indexed sender, uint baseDelta, uint quoteDelta);
 export const BuyEventTopic = utils.id('Buy(address,uint256,uint256)')
+
+// export function fromRawEventToBuyEvent(e: BuyEvent) {
+//   return parseBuyEvent({
+//     ...e.args,
+//     blockNumber: e.blockNumber,
+//     transactionHash: e.transactionHash,
+//   })
+// }
