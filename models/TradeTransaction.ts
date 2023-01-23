@@ -2,17 +2,19 @@ import { isEqualByD } from 'libs/utils/lodash'
 import { getArraySchema } from 'libs/utils/zod'
 import { z } from 'zod'
 import { TransactionHashSchema } from '../../ethereum/models/TransactionHash'
-import { TimestampSchema } from '../../generic/models/Timestamp'
+import { ChainIdSchema } from '../../ethereum/models/ChainId'
+import { BlockNumberSchema } from '../../ethereum/models/BlockNumber'
 
 export const TradeTransactionSchema = z.object({
-  chainId: z.number().int(),
-  hash: TransactionHashSchema,
-  timestamp: TimestampSchema,
+  chainId: ChainIdSchema,
+  transactionHash: TransactionHashSchema,
+  // timestamp: TimestampSchema,
+  blockNumber: BlockNumberSchema,
 }).describe('TradeTransaction')
 
 export const TradeTransactionUidSchema = TradeTransactionSchema.pick({
   chainId: true,
-  hash: true,
+  transactionHash: true,
 })
 
 export const TradeTransactionsSchema = getArraySchema(TradeTransactionSchema, parseTradeTransactionUid)

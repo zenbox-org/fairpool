@@ -6,6 +6,10 @@ import { TradeTransactionSchema } from './TradeTransaction'
 import { AddressSchema } from '../../ethereum/models/Address'
 
 /**
+ * IMPORTANT: Trade is different from TradeEvent
+ * - TradeEvent is a raw event from a smart contract
+ * - Trade is a processed TradeEvent (more suitable for UI)
+ *
  * baseDelta is positive -> trade is a buy
  * baseDelta is negative -> trade is a sell
  */
