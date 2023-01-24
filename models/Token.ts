@@ -30,6 +30,8 @@ export type Token = z.infer<typeof TokenSchema>
 
 export type TokenUid = z.infer<typeof TokenUidSchema>
 
+export type TokenField = keyof Token
+
 export function parseToken(token: Token): Token {
   return TokenSchema.parse(token)
 }
