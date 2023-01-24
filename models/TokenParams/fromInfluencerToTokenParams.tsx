@@ -16,4 +16,5 @@ export const fromInfluencerToTokenParams = (influencer: Influencer) => parseToke
   beneficiaries: [{ address: ZeroAddress, share: BaseScale }],
   scale: BaseScale,
   decimals: BaseDecimals,
+  isUpgradeable: true,
 })
