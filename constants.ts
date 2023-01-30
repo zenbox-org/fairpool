@@ -7,7 +7,7 @@ export const DefaultScale = bn(10).pow(DefaultDecimals)
 
 export const DefaultRoundingPlaces = 6
 
-export const DefaultSlope = bn(5)
+export const DefaultSlope = bn(5).mul(DefaultScale)
 
 export const WeightDecimals = bn(6)
 
