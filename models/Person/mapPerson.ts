@@ -1,7 +1,7 @@
-import { Mapper } from 'libs/utils/lodash'
 import { Optional } from 'ts-toolbelt/out/Object/Optional'
 import { Contact } from '../../../generic/models/Contact'
 import { Language } from '../../../generic/models/Language'
+import { Mapper } from '../../../generic/models/Mapper'
 import { parsePerson, Person } from '../Person'
 
 export const mapPersonFL = <T>(map: Mapper<Person, T>) => (firstname: string, lastname: string, shortname = firstname, language: Language, contacts: Contact[] = [], person: Optional<Person, 'uid' | 'name' | 'shortname' | 'language' | 'contacts'> = {}) => map({

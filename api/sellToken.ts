@@ -2,11 +2,9 @@ import { z } from 'zod'
 import { subUint } from '../../ethereum/math'
 import { AmountPositiveBNSchema } from '../../ethereum/models/AmountPositiveBN'
 import { IdxSchema } from '../../generic/models/Idx'
-import { getScale } from '../models/Token/getScale'
 import { getTotalSupply } from '../models/Token/getTotalSupply'
 import { toFairpoolTransition } from '../toFairpoolTransition'
 import { SessionParamsSchema } from './models/SessionParams'
-import { getQuoteFromBase } from './utils/conversion'
 import { getTokenInfo } from './utils/getWalletInfo'
 import { subBalance } from './utils/updateBalance'
 
@@ -30,7 +28,8 @@ export const buyToken = toFairpoolTransition(SellTokenSchema)((params) => async 
   const baseOld = getTotalSupply(token)
   const baseNew = subUint(baseOld, baseAmount)
   const quoteOld = token.amount
-  const quoteNew = getQuoteFromBase(baseNew, token.speed, getScale(token))
+  // TODO:
+  // const quoteNew = getQuoteFromBase(baseNew, token.speed, getScale(token))
   subBalance(token, wallet.address, baseAmount)
   return state
 })
