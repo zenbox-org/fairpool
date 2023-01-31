@@ -4,12 +4,13 @@ import { bn } from '../../../bn/utils'
 import { toBeneficiary } from '../BeneficiaryPrimitive/toBeneficiary'
 
 export function toTokenParams<T extends TokenParamsPrimitive>(input: T): T & TokenParams {
-  const { speed, royalties, dividends, fees, beneficiaries, scale, decimals } = input
+  const { slope, weight, royalties, earnings, fees, beneficiaries, scale, decimals } = input
   return {
     ...input,
-    speed: bn(speed),
+    slope: bn(slope),
+    weight: bn(weight),
     royalties: bn(royalties),
-    dividends: bn(dividends),
+    earnings: bn(earnings),
     fees: bn(fees),
     beneficiaries: beneficiaries.map(toBeneficiary),
     scale: bn(scale),

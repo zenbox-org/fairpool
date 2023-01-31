@@ -3,13 +3,15 @@ import { parseTokenParams } from '../TokenParams'
 import { BaseDecimals, BaseScale } from '../../constants.all'
 import { getPercent, getShare } from '../../../bn/utils'
 import { ZeroAddress } from '../../../ethereum/data/allAddresses'
+import { DefaultSlope, DefaultWeight } from '../../constants'
 
 export const fromInfluencerToTokenParams = (influencer: Influencer) => parseTokenParams({
   name: `${influencer.title} Token`,
   symbol: influencer.symbol,
-  speed: BaseScale,
+  slope: DefaultSlope,
+  weight: DefaultWeight,
   royalties: getPercent(BaseScale, 7),
-  dividends: getPercent(BaseScale, 25),
+  earnings: getPercent(BaseScale, 25),
   fees: getShare(BaseScale, 25, 1000),
   owner: ZeroAddress,
   operator: ZeroAddress,

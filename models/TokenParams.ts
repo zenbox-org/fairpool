@@ -9,10 +9,10 @@ import { AddressSchema } from '../../ethereum/models/Address'
 export const TokenParamsSchema = z.object({
   name: NameSchema,
   symbol: NameSchema,
-  quoteBuffer: AmountUint256BNSchema,
+  slope: AmountUint256BNSchema,
   weight: AmountUint256BNSchema,
   royalties: AmountUint256BNSchema,
-  dividends: AmountUint256BNSchema,
+  earnings: AmountUint256BNSchema,
   fees: AmountUint256BNSchema,
   beneficiaries: BeneficiariesSchema,
   owner: AddressSchema,

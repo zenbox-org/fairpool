@@ -6,9 +6,10 @@ import { AmountBNPrimitiveSchema } from '../../ethereum/models/AmountBNPrimitive
 import { TokenParamsSchema } from './TokenParams'
 
 export const TokenParamsPrimitiveSchema = TokenParamsSchema.extend({
-  speed: AmountBNPrimitiveSchema,
+  slope: AmountBNPrimitiveSchema,
+  weight: AmountBNPrimitiveSchema,
   royalties: AmountBNPrimitiveSchema,
-  dividends: AmountBNPrimitiveSchema,
+  earnings: AmountBNPrimitiveSchema,
   fees: AmountBNPrimitiveSchema,
   beneficiaries: BeneficiariesPrimitiveSchema,
   decimals: AmountBNPrimitiveSchema,
