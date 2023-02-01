@@ -3,14 +3,12 @@ import { getArraySchema } from 'libs/utils/zod'
 import { z } from 'zod'
 import { TokenSlugSchema } from './TokenSlug'
 import { UrlSchema } from '../../generic/models/Url'
-import { NameSchema } from '../../generic/models/Name'
-import { DescriptionSchema } from '../../generic/models/Description'
 import { TokenSocialChannelsSchema } from './TokenSocialChannel'
+import { NonEmptyScoopsSchema } from './Scoop'
 
 export const TokenInfoSchema = z.object({
   slug: TokenSlugSchema,
-  title: NameSchema,
-  description: DescriptionSchema.optional(),
+  scoops: NonEmptyScoopsSchema,
   website: UrlSchema.optional(),
   avatarUrl: UrlSchema,
   channels: TokenSocialChannelsSchema,

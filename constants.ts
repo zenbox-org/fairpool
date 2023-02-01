@@ -1,14 +1,20 @@
 import { bn, getPercent } from '../bn/utils'
-import { QuoteScale } from './constants.all'
+import { DefaultDecimals as $QuoteDecimals, DefaultScale as $QuoteScale } from '../ethereum/constants'
 
 // updated to 18 after switch to Bancor formula
-export const DefaultDecimals = bn(18)
+export const BaseDecimals = bn(18)
 
-export const DefaultScale = bn(10).pow(DefaultDecimals)
+export const BaseScale = bn(10).pow(BaseDecimals)
+
+export const QuoteDecimals = $QuoteDecimals
+
+export const QuoteScale = $QuoteScale
 
 export const DefaultRoundingPlaces = 6
 
-export const DefaultSlope = getPercent(QuoteScale, 5)
+export const SlopeScale = $QuoteScale
+
+export const DefaultSlope = getPercent(SlopeScale, 5)
 
 export const WeightDecimals = bn(6)
 

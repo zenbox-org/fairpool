@@ -1,7 +1,7 @@
 import { TradeEvent } from '../TradeEvent'
 import { toFrontendAmountBND } from '../../../utils/bignumber.convert'
-import { BaseDecimals, QuoteDecimals } from '../../constants.all'
 import { PrevNextMaybe } from '../../../generic/models/PrevNext'
+import { BaseDecimals, QuoteDecimals } from '../../constants'
 
 function fromTradeEventToDisplayedStats(trade: TradeEvent) {
   const { baseDelta, quoteDelta, quoteReceived } = trade

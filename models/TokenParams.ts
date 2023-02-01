@@ -19,6 +19,8 @@ export const TokenParamsSchema = z.object({
   operator: AddressSchema,
   decimals: AmountUint256BNSchema,
   scale: AmountUint256BNSchema,
+  scaleOfShares: AmountUint256BNSchema,
+  scaleOfWeight: AmountUint256BNSchema,
   isUpgradeable: z.boolean(),
 }).describe('TokenParams')
 

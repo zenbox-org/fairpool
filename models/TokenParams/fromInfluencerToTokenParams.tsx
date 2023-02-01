@@ -1,9 +1,8 @@
 import { Influencer } from '../Influencer'
 import { parseTokenParams } from '../TokenParams'
-import { BaseDecimals, BaseScale } from '../../constants.all'
+import { BaseDecimals, BaseScale, DefaultSlope, DefaultWeight, ShareScale, WeightScale } from '../../constants'
 import { getPercent, getShare } from '../../../bn/utils'
 import { ZeroAddress } from '../../../ethereum/data/allAddresses'
-import { DefaultSlope, DefaultWeight } from '../../constants'
 
 export const fromInfluencerToTokenParams = (influencer: Influencer) => parseTokenParams({
   name: `${influencer.title} Token`,
@@ -18,5 +17,7 @@ export const fromInfluencerToTokenParams = (influencer: Influencer) => parseToke
   beneficiaries: [{ address: ZeroAddress, share: BaseScale }],
   scale: BaseScale,
   decimals: BaseDecimals,
+  scaleOfShares: ShareScale,
+  scaleOfWeight: WeightScale,
   isUpgradeable: true,
 })

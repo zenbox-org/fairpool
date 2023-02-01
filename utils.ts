@@ -1,6 +1,5 @@
 import { toFrontendAmountBND } from '../utils/bignumber.convert'
-import { BaseDecimals, QuoteDecimals, QuoteScale } from './constants.all'
-import { ShareScale, WeightDecimals, WeightScale } from './constants'
+import { BaseDecimals, QuoteDecimals, QuoteScale, ShareScale, WeightDecimals, WeightScale } from './constants'
 import { BigNumberish } from 'ethers'
 import { getShare as getShareOriginal } from '../bn/utils'
 

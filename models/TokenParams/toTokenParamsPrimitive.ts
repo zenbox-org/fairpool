@@ -3,7 +3,7 @@ import { TokenParamsPrimitive } from '../TokenParamsPrimitive'
 import { toBeneficiaryPrimitive } from '../Beneficiary/toBeneficiaryPrimitive'
 
 export function toTokenParamsPrimitive<T extends TokenParams>(input: T): T & TokenParamsPrimitive {
-  const { slope, weight, royalties, earnings, fees, beneficiaries, scale, decimals } = input
+  const { slope, weight, royalties, earnings, fees, beneficiaries, scale, decimals, scaleOfShares, scaleOfWeight } = input
   return {
     ...input,
     slope: slope.toString(),
@@ -12,7 +12,9 @@ export function toTokenParamsPrimitive<T extends TokenParams>(input: T): T & Tok
     earnings: earnings.toString(),
     fees: fees.toString(),
     beneficiaries: beneficiaries.map(toBeneficiaryPrimitive),
-    scale: scale.toString(),
     decimals: decimals.toString(),
+    scale: scale.toString(),
+    scaleOfShares: scaleOfShares.toString(),
+    scaleOfWeight: scaleOfWeight.toString(),
   }
 }
