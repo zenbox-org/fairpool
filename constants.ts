@@ -20,7 +20,7 @@ export const WeightDecimals = bn(6)
 
 export const WeightScale = bn(10).pow(WeightDecimals)
 
-export const DefaultWeight = getPercent(WeightScale, 33)
+export const DefaultWeight = getPercent(WeightScale, 30)
 
 export const ShareDecimals = bn(6)
 
