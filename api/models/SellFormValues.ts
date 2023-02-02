@@ -2,11 +2,12 @@ import { z } from 'zod'
 import { getArraySchema } from 'libs/utils/zod'
 import { isEqualByDC } from 'libs/utils/lodash'
 import { SellParamsSchema } from './SellParams'
+import { StringBigNumSchema } from '../../../ethereum/models/StringBigNum'
 
 export const SellFormValuesSchema = SellParamsSchema.extend({
-  baseDeltaProposed: z.string().min(1, 'Must not be empty'),
-  quoteDeltaMin: z.string().min(1, 'Must not be empty'),
-  deadline: z.string().min(1, 'Must not be empty'),
+  baseDeltaProposed: StringBigNumSchema,
+  quoteDeltaMin: StringBigNumSchema,
+  deadline: StringBigNumSchema,
 }).describe('SellFormValues')
 
 export const SellFormValuesUidSchema = SellFormValuesSchema.pick({
