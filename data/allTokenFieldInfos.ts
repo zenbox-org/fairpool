@@ -1,4 +1,4 @@
-import { renderSharePercent, renderWeightAsPower } from '../../../components/models/TokenSetting/renderTokenSettings'
+import { renderSharePercent, renderWeightAsPower } from '../models/TokenParams/renderTokenParams'
 import { toRenderedAmountBNS } from '../../utils/bignumber.convert'
 import { SlopeScale } from '../constants'
 import { boolean2string } from '../../utils/conversion'
