@@ -7,6 +7,7 @@ export const TokenSocialChannelSchema = $.SocialChannelSchema.pick({
   slug: true,
   type: true,
   followerCount: true,
+  followerCountEstimatedAt: true,
 }).extend({
 
 })

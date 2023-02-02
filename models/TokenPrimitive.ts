@@ -6,11 +6,13 @@ import { TokenParamsPrimitiveSchema } from './TokenParamsPrimitive'
 import { TokenDataPrimitiveSchema } from './TokenDataPrimitive'
 import { AmountBNPrimitiveSchema } from '../../ethereum/models/AmountBNPrimitive'
 import { BalancesBNPrimitiveSchema } from '../../ethereum/models/BalanceBNPrimitive'
+import { TokenSocialChannelPrimitivesSchema } from './TokenSocialChannelPrimitive'
 
 export const TokenPrimitiveSchema = TokenSchema
   .extend({
     amount: AmountBNPrimitiveSchema,
     balances: BalancesBNPrimitiveSchema,
+    channels: TokenSocialChannelPrimitivesSchema,
   })
   .merge(TokenParamsPrimitiveSchema)
   .merge(TokenDataPrimitiveSchema)
