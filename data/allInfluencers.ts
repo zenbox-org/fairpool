@@ -65,7 +65,7 @@ export const OlgaKulakovaInfluencer = addInfluencerD({
   `,
   website: 'https://olgakulakova.youcanbook.me/',
   channels: [
-    c('https://www.instagram.com/olgajivaya/', 1822, new Date('2022-11-06')),
+    c('https://www.instagram.com/olgajivaya/', 1800, new Date('2023-02-04')),
   ],
   tags: [Wellness],
 })
@@ -163,11 +163,17 @@ export const JeromeTanInfluencer = addInfluencerD({
 
 export const AlexanderLeginInfluencer = addInfluencerD({
   ...spreadPerson(AlexanderLegin),
-  title: 'Алекс Легин | Эксперт по страхам',
+  title: 'Александр Легин',
+  description: `
+    💲 Наставник предпринимателей и лидеров современности
+    🎓 Эксперт №1 в СНГ по работе со страхами по методике Терапия Отказами
+    🎯 Мастер игровых челленджей для экспертов и предпринимателей.
+    🔥 5000 выпускников
+  `,
   username: 'alex_legin',
-  symbol: 'LEG',
+  symbol: 'LEGIN',
   channels: [
-    c('https://www.instagram.com/alex_legin', 3833, new Date('2022-11-02')),
+    c('https://www.instagram.com/alex_legin', 3833, new Date('2023-02-04')),
   ],
   tags: [Business],
 })
