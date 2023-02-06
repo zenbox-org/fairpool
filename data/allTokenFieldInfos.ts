@@ -7,12 +7,12 @@ import { TFunction } from 'next-i18next'
 
 export const allTokenFieldInfos: TokenFieldInfo[] = [
   {
-    name: 'royalties',
-    render: (token: TokenParams) => renderSharePercent(token)(token.royalties),
-  },
-  {
     name: 'earnings',
     render: (token: TokenParams) => renderSharePercent(token)(token.earnings),
+  },
+  {
+    name: 'royalties',
+    render: (token: TokenParams) => renderSharePercent(token)(token.royalties),
   },
   {
     name: 'fees',
