@@ -1,9 +1,9 @@
 import { renderSharePercent, renderWeightAsPower } from '../models/TokenParams/renderTokenParams'
 import { toRenderedAmountBNS } from '../../utils/bignumber.convert'
 import { SlopeScale } from '../constants'
-import { boolean2string } from '../../utils/conversion'
 import { TokenFieldInfo } from '../models/TokenFieldInfo'
 import { TokenParams } from '../models/TokenParams'
+import { TFunction } from 'next-i18next'
 
 export const allTokenFieldInfos: TokenFieldInfo[] = [
   {
@@ -28,6 +28,6 @@ export const allTokenFieldInfos: TokenFieldInfo[] = [
   },
   {
     name: 'isUpgradeable',
-    render: (token: TokenParams) => boolean2string(token.isUpgradeable),
+    render: (token: TokenParams, t: TFunction) => t(token.isUpgradeable ? 'yes' : 'no'),
   },
 ]
