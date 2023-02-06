@@ -5,7 +5,7 @@ import { BTC, HEX } from 'libs/finance/data/allAssets'
 import { Tamil } from 'libs/generic/data/allLanguages'
 import { getFinder, getInserter, getName } from 'libs/utils/zod'
 import { AltcoinBuffet, Business, Crypto, CryptoCharts, Gaming, Health, Lifestyle, PlayToEarn, Wellness } from './allInfluencerTags'
-import { AaronVanKampen, AdamGoodall, AlexanderCraft, AlexanderLegin, AlexanderLeskov, AnatoliLos, AnnaWhiteMagic, AriRover, BlackPrince, ChrisDelaney, CilinixCrypto, CopperPitch, CryptoAndy, CryptoArchie, CryptoBoat, CryptoGains, CryptoGeeks, CryptoIsh, DefiDefenders, eOne, EverythingIsCrypto, IlyaBelashov, InvestingNerd, IvyCrypto, JeromeTan, JohnMasterson, JordanVoorhees, LeviRietveldCryptoKing, MindYourCrypto, NiomiSmart, OlgaKulakova, PacoWeb, PassiveBase, RandiHipperMissTeenCrypto, SimonGlavin, Spike, SuperTradeish, TamaraOdonata, ThisIsCrypto, TwoBitCrypto, VickyBuddhaCafe } from './allPersons'
+import { AaronVanKampen, AdamCochran, AdamGoodall, AlexanderCraft, AlexanderLegin, AlexanderLeskov, AnatoliLos, AnnaWhiteMagic, AriRover, BlackPrince, ChrisDelaney, CilinixCrypto, CopperPitch, CryptoAndy, CryptoArchie, CryptoBoat, CryptoGains, CryptoGeeks, CryptoIsh, DefiDefenders, eOne, EverythingIsCrypto, IlyaBelashov, InvestingNerd, IvyCrypto, JeromeTan, JohnMasterson, JordanVoorhees, LeviRietveldCryptoKing, MindYourCrypto, NiomiSmart, OlgaKulakova, PacoWeb, PassiveBase, RandiHipperMissTeenCrypto, SimonGlavin, Spike, SuperTradeish, TamaraOdonata, ThisIsCrypto, TwoBitCrypto, VickyBuddhaCafe } from './allPersons'
 
 export const allInfluencers: Influencer[] = []
 
@@ -56,13 +56,13 @@ export const CopperPitchInfluencer = addInfluencerD({
 export const OlgaKulakovaInfluencer = addInfluencerD({
   ...spreadPerson(OlgaKulakova),
   title: 'Ольга | Коуч управления состоянием',
-  username: 'olgajivaya',
-  symbol: 'OLGA',
   description: `
     💎 Исцеляю танцами и коучингом
-    🏝 Живу на острове, делюсь красотой
-    🧠 Настраиваю мышление на счастье
+    🏝 Живу на острове, делюсь красотой  
+    🧠 Настраиваю мышление на счастье  
   `,
+  username: 'olgajivaya',
+  symbol: 'OLGA',
   website: 'https://olgakulakova.youcanbook.me/',
   channels: [
     c('https://www.instagram.com/olgajivaya/', 1800, new Date('2023-02-04')),
@@ -661,4 +661,18 @@ export const CryptoGeeksInfluencer = addInfluencerD({
     c('https://www.instagram.com/cryptogeeks7/', 29, new Date('2022-11-16')),
   ],
   tags: [AltcoinBuffet],
+})
+
+export const AdamCochranInfluencer = addInfluencerD({
+  ...spreadPerson(AdamCochran),
+  title: 'Adam Cochran',
+  username: 'adamscochran',
+  symbol: 'ADAM',
+  description: `
+    Partner@CEHV, Adj. Prof Info Sci/Biz Analysis, SC [@synthetix_io](https://twitter.com/synthetix_io), Contributing to [@iearnfinance](https://twitter.com/iearnfinance), [@amphoraprotocol](https://twitter.com/amphoraprotocol), [http://cochran.io](https://cochran.io/), #LeXpunK, Prev: Growth@DDG
+  `,
+  channels: [
+    c('https://twitter.com/adamscochran', 181000, new Date('2023-02-06')),
+  ],
+  tags: [],
 })

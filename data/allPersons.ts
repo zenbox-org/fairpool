@@ -509,3 +509,14 @@ export const CryptoGeeks = addPerson({
     'https://web.facebook.com/profile.php?id=100084881405845',
   ],
 })
+
+export const AdamCochran = addPerson({
+  ...spreadName('Adam', 'Cochran', undefined, 'AdamCochran'),
+  language: English,
+  contacts: [
+    'https://twitter.com/adamscochran',
+    'https://cochran.io/',
+    'https://cehv.com/',
+    'ens:adamscochran.eth',
+  ],
+})
