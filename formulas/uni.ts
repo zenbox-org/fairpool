@@ -1,5 +1,5 @@
 import { Arithmetic } from '../../utils/arithmetic'
-import { Address } from '../../../models/Address'
+import { Address } from '../../ethereum/models/Address'
 import { ensureFind, getFinder } from '../../utils/ensure'
 import { clone, map } from 'remeda'
 import { BalanceGen } from '../../finance/models/BalanceGen'
