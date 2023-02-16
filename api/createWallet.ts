@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { Transition } from '../../divide-and-conquer/Transition'
+import { TransitionP } from '../../divide-and-conquer/TransitionP'
 import { AmountBNSchema } from '../../ethereum/models/AmountBN'
 import { parseState, State } from './models/State'
 import { UserParamsSchema } from './models/UserParams'
@@ -11,7 +11,7 @@ export const CreateWalletSchema = UserParamsSchema.extend({
 
 export type CreateWallet = z.infer<typeof CreateWalletSchema>
 
-export const createWallet: Transition<CreateWallet, State> = (params) => async (state) => {
+export const createWallet: TransitionP<CreateWallet, State> = (params) => async (state) => {
   const address = getAddressFromIndex(state.addressIndex++)
   state.wallets.push({
     ...params,

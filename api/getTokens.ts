@@ -1,17 +1,17 @@
 import { expect } from 'libs/utils/chai'
 import { todo } from 'libs/utils/todo'
 import { sortBy } from 'remeda'
-import { Transition } from '../../divide-and-conquer/Transition'
+import { TransitionP } from '../../divide-and-conquer/TransitionP'
 import { ensure, ensureByIndex } from '../../utils/ensure'
+import { Token } from '../models/Token'
 import { SessionParams } from './models/SessionParams'
 import { parseState, State } from './models/State'
-import { Token } from '../models/Token'
 
 export interface GetTokens extends SessionParams {
   query?: string
 }
 
-export const getTokens: Transition<GetTokens, State> = ({ query, sessionId }) => async (state) => {
+export const getTokens: TransitionP<GetTokens, State> = ({ query, sessionId }) => async (state) => {
   const infosUnsorted = await getTokensUnsorted(query)
   const infos = sortBy(infosUnsorted, t => t.quoteDailyVolume.toNumber())
   state.sessions[sessionId].page = {
