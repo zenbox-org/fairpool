@@ -114,3 +114,20 @@ baseSupplyCurrent == baseSupplyMax * quoteSupplyCurrent / (quoteSupplyInitial + 
 baseDelta(quoteSupplyCurrent) == baseSupplyMax * (quoteSupplyCurrent + 1) / (quoteSupplyInitial + quoteSupplyCurrent + 1) - baseSupplyCurrent(quoteSupplyCurrent) - baseSupplyMax * quoteSupplyCurrent / (quoteSupplyInitial + quoteSupplyCurrent)
 
 ```
+
+## Turning point
+
+```typescript
+baseSupply == baseLimit * quoteSupply / (quoteOffset + quoteSupply)
+baseLimit = k * quoteOffset // assume this // may be unnecessary
+b1 == l * q1 / (o + q1)
+b2 == l * q2 / (o + q2)
+b2 - b1 == 1
+q2 - q1 == 1
+l * q2 / (o + q2) - l * q1 / (o + q1) == 1
+l * (q1 + 1) / (o + (q1 + 1)) - l * q1 / (o + q1) == 1
+// simplify using Wolfram Alpha
+l * o == (o + q1) * (1 + o + q1)
+// solve using Wolfram Alpha, assuming l > 0 && o > 0 && q1 > 0
+q1 = 1/2 * (sqrt(4 * l * o + 1) - 2 * o - 1)
+```

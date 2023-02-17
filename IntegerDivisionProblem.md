@@ -18,6 +18,10 @@
 ## Notes
 
 ## Outline
+
+* Important: a single baseSupply / quoteSupply calculation cycle already gives a very good approximation
+  * This solves the refund problem in the buy() function
+  * quoteSupplyInt is guaranteed to be less than quoteSupplyRat
 * Integer Quadratic Programming (IQP)
   * [Solving Integer Quadratic Programming ...](https://ojs.aaai.org/index.php/AAAI/article/view/3960/3838)
   * [Integer Programming](https://en.wikipedia.org/wiki/Integer_programming)
@@ -30,6 +34,10 @@
 
 ## Options
 
+* Use cudgels
+  * Ensure baseDeltaMin >= 1
+  * Ensure the full contract balance is withdrawn in the last sell()
+  * Increase the curve parameters
 * Use a list of precalculated optimal values on the frontend
   * Outline
     * Important
@@ -41,10 +49,6 @@
   * Options
     * Use brute force search
     * Use an algorithm for solving a Diophantine equation
-* Use cudgels
-  * Ensure baseDeltaMin >= 1
-  * Ensure the full contract balance is withdrawn in the last sell()
-  * Increase the curve parameters
 * Find a pair of integers
   * Options
     * https://math.stackexchange.com/q/1991605
