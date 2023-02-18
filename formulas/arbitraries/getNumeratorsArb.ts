@@ -1,7 +1,7 @@
-import { array, integer } from 'fast-check'
 import { strict as assert } from 'assert'
+import { array, integer } from 'fast-check'
 
-export const getNumerators = (length: number, resolution = 5000) => {
+export const getNumeratorsArb = (length: number, resolution = 5000) => {
   assert(resolution > 1)
   return array(
     integer({

@@ -1,7 +1,7 @@
-import { assertBy } from '../../../utils/assert'
 import { Arithmetic } from '../../../utils/arithmetic'
-import { Quotient } from '../../../utils/arithmetic/Quotient'
 import { getQuotientOf } from '../../../utils/arithmetic/getQuotientOf'
+import { Quotient } from '../../../utils/arithmetic/Quotient'
+import { assertBy } from '../../../utils/assert'
 
 /**
  * Produces an array of values where:
