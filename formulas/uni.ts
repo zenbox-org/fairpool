@@ -12,6 +12,7 @@ import { ensureFind, getFinder } from '../../utils/ensure'
 import { AssertionFailedError } from '../../utils/error'
 import { isEqualBy } from '../../utils/lodash'
 import { get__filename } from '../../utils/node'
+import { meldWithLast } from '../../utils/remeda/meldWithLast'
 import { WithToString } from '../../utils/string'
 
 export type Wallet = string
@@ -51,6 +52,8 @@ export class QuoteDeltaMustBeGreaterThanZero<N> extends AssertionFailedError<{ q
 
 const __filename = get__filename(import.meta.url)
 
+export const toContextFun = <N, Rest>(f: (arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => Rest) => (context: Context<N>) => f(context.arithmetic)(context.baseLimit, context.quoteOffset)
+
 export const getBaseSupply = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (quoteSupply: N) => {
   const { add, sub, mul, div } = arithmetic
   const numerator = mul(baseLimit, quoteSupply)
@@ -73,7 +76,7 @@ export const getQuoteSupply = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, q
   return div(numerator, denominator)
 }
 
-export const getQuoteSupplyQ = <N>(context: Context<N>) => getQuoteSupply(context.arithmetic)(context.baseLimit, context.quoteOffset)
+export const getQuoteSupplyC = toContextFun(getQuoteSupply)
 
 export const getBaseDelta = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (quoteDeltaProposed: N) => {
   const { add, sub, mul, div, gt, lte } = arithmetic
@@ -89,6 +92,9 @@ export const getQuoteDelta = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, qu
   return sub(quoteSupplyCurrent, quoteSupplyNew)
 }
 
+/**
+ * inclusive
+ */
 export const getQuoteSupplyMax = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => {
   const { add, sub, mul, div, one } = arithmetic
   return getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(sub(one)(baseLimit))
@@ -96,11 +102,12 @@ export const getQuoteSupplyMax = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N
 
 export const getQuoteSupplyFor = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseSupply: N) => {
   const { add, sub, mul, div, one } = arithmetic
-  const quoteSupplyNew = getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(baseSupply)
-  return add(one)(quoteSupplyNew)
+  const baseSupplyNext = add(one)(baseSupply)
+  const quoteSupplyNext = getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(baseSupplyNext)
+  return sub(one)(quoteSupplyNext)
 }
 
-export const getQuoteSupplyForQ = <N>(context: Context<N>) => getQuoteSupplyFor(context.arithmetic)(context.baseLimit, context.quoteOffset)
+export const getQuoteSupplyForC = toContextFun(getQuoteSupplyFor)
 
 /**
  * @deprecated
@@ -114,7 +121,7 @@ export const getQuoteDeltaMin = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N,
 /**
  * @deprecated
  */
-export const getQuoteDeltaMinQ = <N>(context: Context<N>) => getQuoteDeltaMin(context.arithmetic)(context.baseLimit, context.quoteOffset)
+export const getQuoteDeltaMinC = toContextFun(getQuoteDeltaMin)
 
 /**
  * TODO: Rewrite to (quoteDeltaDefault: N) => (quoteDeltaMultipliers: N[])
@@ -229,7 +236,38 @@ export const getQuoteSupplyAcceptableMax = <N>(arithmetic: Arithmetic<N>) => (ba
 /**
  * @deprecated
  */
-export const getQuoteSupplyAcceptableMaxQ = <N>(context: Context<N>) => getQuoteSupplyAcceptableMax(context.arithmetic)(context.baseLimit, context.quoteOffset)
+export const getQuoteSupplyAcceptableMaxC = toContextFun(getQuoteSupplyAcceptableMax)
+
+/**
+ * initialPrice = quoteOffset / baseLimit
+ * baseSupplySuperlinearMin = baseLimit / (initialPrice + 1)
+ * NOTE: baseSupplySuperlinearMin can be zero
+ *
+ * if (baseSupply < baseSupplySuperlinearMin) quoteSupply == initialPrice * baseSupply
+ * if (baseSupply == baseSupplySuperlinearMin) quoteSupply >= initialPrice * baseSupply
+ * if (baseSupply > baseSupplySuperlinearMin) quoteSupply > initialPrice * baseSupply
+ */
+export const getBaseSupplySuperlinearMin = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => {
+  const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
+  const initialPrice = getInitialPrice(arithmetic)(baseLimit, quoteOffset)
+  const denominator = add(initialPrice, one)
+  return div(baseLimit, denominator)
+}
+
+export const getBaseSupplySuperlinearMinC = toContextFun(getBaseSupplySuperlinearMin)
+
+export const getInitialPrice = <N>({ div }: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => {
+  return div(quoteOffset, baseLimit)
+}
+
+export const getBaseSuppliesFromBaseDeltas = <N>({ add, zero }: Arithmetic<N>) => meldWithLast(add, zero)
+
+export const getQuoteDeltasFromBaseDeltas = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseDeltas: N[]) => {
+  const baseSupplies = getBaseSuppliesFromBaseDeltas(arithmetic)(baseDeltas)
+  return baseSupplies.map(getQuoteSupplyFor(arithmetic)(baseLimit, quoteOffset))
+}
+
+export const getQuoteDeltasFromBaseDeltasC = toContextFun(getQuoteDeltasFromBaseDeltas)
 
 /**
  * Currently this function is called in every action. This is suboptimal, must be refactored (requires moving baseLimit and quoteOffset to State)

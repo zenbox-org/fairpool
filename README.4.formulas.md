@@ -131,3 +131,36 @@ l * o == (o + q1) * (1 + o + q1)
 // solve using Wolfram Alpha, assuming l > 0 && o > 0 && q1 > 0
 q1 = 1/2 * (sqrt(4 * l * o + 1) - 2 * o - 1)
 ```
+
+## Curve-line divergence point
+
+The point after which the curve cannot be reduced to a line
+
+```typescript
+quoteSupply == baseSupply * quoteOffset / (baseLimit - baseSupply)
+// apply the truncation rule: the result of division is truncated according to integer arithmetic
+quoteSupply == baseSupply * trunc(quoteOffset / (baseLimit - baseSupply))
+// apply quoteOffset = k * baseLimit
+quoteSupply == baseSupply * trunc(k * baseLimit / (baseLimit - baseSupply))
+// show the example of applying the truncation rule
+if (isLimitOf(baseSupply, zero) && isLimitOf(baseLimit, Infinity)) { 
+  trunc(k * baseLimit / (baseLimit - baseSupply)) == k
+  /**
+   * trunc(k * 100000 / (100000 - 1))
+   * trunc(k * 100000 / 99999)
+   * trunc(k * 1.00001)
+   * trunc(k * (1 + 0.00001))
+   * trunc(k + k * 0.00001)
+   * k
+   */
+}
+// apply condition of line divergence
+trunc(k * baseLimit / (baseLimit - baseSupply)) > k
+k * baseLimit / (baseLimit - baseSupply) >= k + 1
+k * baseLimit >= (k + 1) * (baseLimit - baseSupply)
+k * baseLimit >= k * baseLimit + baseLimit - (k + 1) * baseSupply
+0 >= 0 + baseLimit - (k + 1) * baseSupply
+0 + (k + 1) * baseSupply >= 0 + baseLimit
+(k + 1) * baseSupply >= baseLimit
+baseSupply >= (baseLimit) / (k + 1)
+```

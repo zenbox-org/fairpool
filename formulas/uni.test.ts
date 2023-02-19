@@ -1,7 +1,7 @@
 import { test } from '@jest/globals'
 import { assert, bigInt, integer, nat, property, record } from 'fast-check'
 import { writeFile } from 'fs/promises'
-import { clone, countBy, createPipe, identity, last, map, pipe, range, times, uniq } from 'remeda'
+import { countBy, createPipe, identity, last, map, pipe, range, sort, times, uniq } from 'remeda'
 import { uint256Max } from '../../bn/constants'
 import { getBalancesGenInitial } from '../../finance/models/BalanceGen/getBalancesGenInitial'
 import { MutatorV } from '../../generic/models/Mutator'
@@ -11,19 +11,19 @@ import { getDeltas } from '../../utils/arithmetic/getDeltas'
 import { halve as $halve } from '../../utils/arithmetic/halve'
 import { isDescending } from '../../utils/arithmetic/isDescending'
 import { sum } from '../../utils/arithmetic/sum'
-import { assertEq } from '../../utils/assert'
+import { ofNumbers } from '../../utils/array/sort'
+import { assertBy, assertEq } from '../../utils/assert'
 import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
 import { dbgS, debug, input, inter, isLogEnabled, output } from '../../utils/debug'
 import { getAssertParametersForReplay } from '../../utils/fast-check/replay'
 import { withSkips } from '../../utils/fast-check/withSkips'
 import { get__filename } from '../../utils/node'
 import { sequentialReducePush, sequentialReduceV } from '../../utils/promise'
-import { meldWithLast } from '../../utils/remeda/meldWithLast'
 import { wrap } from '../../utils/remeda/wrap'
 import { getNumeratorsArb } from './arbitraries/getNumeratorsArb'
 import { toBoundedArray } from './arbitraries/toBoundedArray'
 import { toQuotients } from './arbitraries/toQuotients'
-import { Action, Balance, buy, Context, getAmount, getAmountsBQ, getBalancesBQ, getBalancesEvolution, getBaseSupply, getQuoteSupplyAcceptableMaxQ, getQuoteSupplyFor, getQuoteSupplyForQ, getStats, getTotalSupply, Params, selloff, validateContext, Wallet } from './uni'
+import { Action, Balance, buy, Context, getAmount, getAmountsBQ, getBalancesBQ, getBalancesEvolution, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinC, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasC, getQuoteSupplyAcceptableMaxC, getQuoteSupplyFor, getQuoteSupplyForC, getQuoteSupplyMax, getStats, getTotalSupply, Params, selloff, validateContext, Wallet } from './uni'
 import { assertBalances } from './uni.test.helpers'
 
 type N = bigint
@@ -41,11 +41,10 @@ const wallets = ['contract', 'alice', 'bob']
 const assets = ['ABC', 'ETH']
 const [contract, alice, bob] = wallets
 const [base, quote] = assets
-const quoteDeltaMin = 1n
-const baseLimitConstraints = { min: 1000n, max: uint256Max.toBigInt() }
-const quoteOffsetMultiplierConstraints = { min: 2n, max: 200n }
 const getParams = ({ quoteOffsetMultiplier, baseLimit }: PreContext<N>) => ({ baseLimit, quoteOffset: mul(baseLimit, quoteOffsetMultiplier) })
 const getContext = (params: Params<N>): Context<N> => validateContext({ arithmetic, baseAsset: base, quoteAsset: quote, ...params })
+const baseLimitConstraints = { min: 1000n, max: uint256Max.toBigInt() }
+const quoteOffsetMultiplierConstraints = { min: 2n, max: 200n }
 const paramsArb = record<PreContext<N>>({
   quoteOffsetMultiplier: bigInt(quoteOffsetMultiplierConstraints),
   baseLimit: bigInt(baseLimitConstraints),
@@ -56,7 +55,7 @@ const paramsArb = record<PreContext<N>>({
 const quoteDeltaConstraints = { min: 1n, max: uint256Max.toBigInt() }
 const quoteDeltaMultiplierConstraints = { min: 1n, max: uint256Max.toBigInt() /* should actually be smaller, but we don't know in advance */ }
 const contextDefault = getContext({ baseLimit: num(20000), quoteOffset: num(100000) })
-const quoteDeltaDefault = getQuoteSupplyForQ(contextDefault)(zero)
+const quoteDeltaDefault = getQuoteSupplyForC(contextDefault)(one)
 // const baseLimit = baseLimitConstraints.min
 // const quoteOffset = div(baseLimit, ratio)
 // const getContext = (params: )= {
@@ -114,7 +113,7 @@ const getProfitAliceSimple = (quoteDelta: N) => (ctx: Context<N>) => getProfit(a
 export const getStatsString = () => {
   // const scale = 1n
   const context = getContext({ baseLimit: 20000n, quoteOffset: 100000n })
-  const quoteSupplyAcceptableMax = getQuoteSupplyAcceptableMaxQ(context)
+  const quoteSupplyAcceptableMax = getQuoteSupplyAcceptableMaxC(context)
   const scale = 10n ** 18n
   const quoteSupplyOptimalMaxN = parseInt(quoteSupplyAcceptableMax.toString())
   const width = 50
@@ -191,8 +190,8 @@ test('a static buy-sell cycle must work as expected', async function testStaticB
       // alice execution price is 5, but bob execution price is 8 (higher than alice) due to large size
       [alice, base, num(1)],
       [alice, quote, num(-5)],
-      [bob, base, num(7499)],
-      [bob, quote, num(-59995)],
+      [bob, base, num(9472)],
+      [bob, quote, num(-89982)],
     ]),
     selloff(contextDefault)(contract, alice),
     selloff(contextDefault)(contract, bob),
@@ -200,9 +199,9 @@ test('a static buy-sell cycle must work as expected', async function testStaticB
       // alice takes profit, bob takes loss
       // alice profit is small because her position size was small
       [alice, base, num(0)],
-      [alice, quote, num(8)],
+      [alice, quote, num(13)],
       [bob, base, num(0)],
-      [bob, quote, num(-8)],
+      [bob, quote, num(-13)],
     ]),
   ])(balancesInitial)
 })
@@ -288,11 +287,35 @@ test(getQuoteSupplyFor.name, async () => {
   assert(property(paramsArb, baseSupplyArb, (params, baseSupplyExpectedIn) => {
     const context = getContext(params)
     const baseSupplyExpected = clamp(context.arithmetic)(one, context.baseLimit)(baseSupplyExpectedIn)
-    const quoteSupply = getQuoteSupplyForQ(context)(baseSupplyExpected)
+    const quoteSupply = getQuoteSupplyForC(context)(baseSupplyExpected)
     const balances = buy(context)(contract, alice, quoteSupply)(balancesInitial)
     const baseSupplyActual = getTotalSupply(context.arithmetic)(base)(balances)
     expect(baseSupplyActual).toEqual(baseSupplyExpected)
   }), await getAssertParametersForReplay({ verbose: true }))
+})
+
+test('there exists such a pair of scenarios where the first scenario gives alice zero profit but the second scenario gives alice non-zero profit', async () => {
+  /**
+   * This happens due to low quoteDelta
+   * When quoteSupply is low, every buy / sell transaction has the same execution price
+   * The curve reduces to a line (the formula becomes almost linear)
+   */
+  // const baseLimit = num(20000)
+  // const quoteOffset = num(100000)
+  const baseLimit = num(100000)
+  const quoteOffset = num(200000)
+  const context = getContext({ baseLimit, quoteOffset })
+  const baseSupplySuperlinearMin = getBaseSupplySuperlinearMinC(context)
+  const scenarios = [
+    { baseDeltas: [one, one] },
+    { baseDeltas: [baseSupplySuperlinearMin, one] },
+  ]
+  const profits = scenarios.map(({ baseDeltas }) => {
+    const [quoteDeltaAlice, quoteDeltaBob] = getQuoteDeltasFromBaseDeltasC(context)(baseDeltas)
+    return getProfitAliceGeneric(quoteDeltaAlice, quoteDeltaBob)(context)
+  })
+  expect(profits[0]).toEqual(zero)
+  expect(profits[1]).toBeGreaterThan(zero)
 })
 
 test('3rd party buy orders have direct influence on profit', async () => {
@@ -307,44 +330,26 @@ test('3rd party buy orders have direct influence on profit', async () => {
   }).map(function mapArgs(args) {
     input(__filename, mapArgs, args)
     const { params, numerators, quoteDeltaMinMultiplier, quoteDeltaBobMultiplier } = args
-    // NOTE: multiply baseLimit by quoteDeltaBobMultiplier ^ 2 to ensure that quoteSupplyAcceptableMax gte sum of quoteDeltas
-    // TODO: remove upscale
     const upscale = mul(quoteDeltaBobMultiplier)
     const baseLimit = params.baseLimit
     const quoteOffset = pipe(params.quoteOffset, upscale, upscale)
-    inter(__filename, mapArgs, { baseLimit, quoteOffset })
-    // const quoteDeltaMin = getQuoteDeltaMin(arithmetic)(baseLimit, quoteOffset)(zero, zero)
-    // const quoteSupplyMax = getQuoteSupplyMax(arithmetic)(baseLimit, quoteOffset)
-    const toQuotientsLocal = toQuotients(arithmetic)
+    const baseSupplySuperlinearMin = getBaseSupplySuperlinearMin(arithmetic)(baseLimit, quoteOffset)
+    const baseDeltaMin = max(one, baseSupplySuperlinearMin) // yes, max(), because baseDeltaMin must be gte one and gte baseSupplySuperlinearMin, but baseSupplySuperlinearMin may be eq zero
+    inter(__filename, mapArgs, { baseLimit, quoteOffset, baseSupplySuperlinearMin })
+    const numeratorsNew = sort(numerators, ofNumbers) // ensure that numeratorBob2 is gt numeratorBob1
     const baseLimitHalf = halve(baseLimit)
-    const toBoundedArrayLocal = toBoundedArray(arithmetic)(one, baseLimitHalf)
-    const baseDeltas = pipe(numerators.map(num), toQuotientsLocal, toBoundedArrayLocal)
-    const [baseDeltaAlice, baseDeltaBob1, baseDeltaBob2] = baseDeltas
-    console.log('baseDeltas', baseDeltas)
-    const baseSupplies = meldWithLast(add, zero)(baseDeltas)
-    console.log('baseSupplies', baseSupplies)
-    const quoteSupplies = baseSupplies.map(getQuoteSupplyFor(arithmetic)(baseLimit, quoteOffset))
+    const toQuotientsLocal = toQuotients(arithmetic)
+    const toBoundedArrayLocal = toBoundedArray(arithmetic)(baseDeltaMin, baseLimitHalf)
+    const baseDeltas = pipe(numeratorsNew.map(num), toQuotientsLocal, toBoundedArrayLocal)
+    const quoteSupplies = getQuoteDeltasFromBaseDeltas(arithmetic)(baseLimit, quoteOffset)(baseDeltas)
+    const quoteSupplyMax = getQuoteSupplyMax(arithmetic)(baseLimit, quoteOffset)
     const quoteDeltaAlice = quoteSupplies[0]
     const [quoteDeltaBob1, quoteDeltaBob2] = getDeltasA(quoteSupplies)
-    // const baseSupplyAlice = baseDeltaAlice
-    // const baseSupplyBob = add(baseSupplyAlice, baseDeltaBob)
-    // const quoteSupplyAlice = getQuoteSupplyFor(arithmetic)(baseLimit, quoteOffset)(baseSupplyAlice)
-    // const quoteSupplyBob = getQuoteSupplyFor(arithmetic)(baseLimit, quoteOffset)(baseSupplyBob)
-    // const quoteDeltaAlice = quoteSupplyAlice
-    // const quoteDeltaBob1 = sub(quoteSupplyBob, quoteSupplyAlice)
-    // const quoteDeltaBob2 = getQuoteDeltaNext(arithmetic)(baseLimit, quoteOffset)(quoteDeltaBob1)
-    // console.log('quoteDeltaAlice', quoteDeltaAlice)
-    // const quoteDeltaBob = getQuoteDeltaNext(arithmetic)(baseLimit, quoteOffset)(zero, zero)(quoteDeltaAlice)
-    const quoteDeltas = [quoteDeltaAlice, quoteDeltaBob1]
-    console.log('quoteDeltas', quoteDeltas)
-    const quoteDeltasA = clone(quoteDeltas)
-    const quoteDeltasB = clone(quoteDeltas)
-    quoteDeltasB[1] = mul(quoteDeltasB[1], quoteDeltaBobMultiplier)
-    const scenarios = [quoteDeltasA, quoteDeltasB]
-    // scenarios.map(quoteDeltas => {
-    //   const quoteDeltasSum = sum(arithmetic)(quoteDeltas)
-    //   return affirm.lte(quoteDeltasSum, quoteSupplyAcceptableMax, 'quoteDeltasSum', 'quoteSupplyAcceptableMax')
-    // })
+    assertBy(lt)(quoteDeltaBob1, quoteDeltaBob2, 'quoteDeltaBob1', 'quoteDeltaBob2')
+    const scenarios = [
+      [quoteDeltaAlice, quoteDeltaBob1],
+      [quoteDeltaAlice, quoteDeltaBob2],
+    ]
     return output(__filename, mapArgs, { baseLimit, quoteOffset, scenarios })
   })
   assert(property(argsArb, function isEveryDeviationOn3rdPartyOrdersGte1(args) {
@@ -354,7 +359,6 @@ test('3rd party buy orders have direct influence on profit', async () => {
     const profits = scenarios.map(([quoteDeltaAlice, quoteDeltaBob]) => {
       return getProfitAliceGeneric(quoteDeltaAlice, quoteDeltaBob)(context)
     })
-    console.log('profits', profits)
     const deviations = getDeltasA(profits)
     expect(deviations.every(gte(num(1)))).toBeTruthy()
   }), await getAssertParametersForReplay({ verbose: true }))
