@@ -164,3 +164,20 @@ k * baseLimit >= k * baseLimit + baseLimit - (k + 1) * baseSupply
 (k + 1) * baseSupply >= baseLimit
 baseSupply >= (baseLimit) / (k + 1)
 ```
+
+## quoteSupplyMax
+
+```typescript
+// introduce the goal
+quoteSupply == quoteSupplyMax
+// introduce the quoteSupply formula
+quoteSupply == baseSupply * quoteOffset / (baseLimit - baseSupply)
+// introduce the requirement for quoteSupply == quoteSupplyMax
+baseSupply == baseLimit - 1
+// simplify
+quoteSupplyMax == (baseLimit - 1) * quoteOffset / (baseLimit - baseLimit + 1)
+quoteSupplyMax == (baseLimit - 1) * quoteOffset / (1)
+quoteSupplyMax == baseLimit * quoteOffset - quoteOffset
+quoteSupplyMax == quoteOffset * (baseLimit - 1)
+
+```

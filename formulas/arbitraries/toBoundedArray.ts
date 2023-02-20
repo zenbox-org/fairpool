@@ -7,12 +7,14 @@ import { assertBy } from '../../../utils/assert'
  * Produces an array of values where:
  * - each value >= valueMin
  * - sum of values <= sumMax (which implies that each value <= sumMax, too)
+ *
+ * IMPORTANT: the second parameter is valueSumMax, not valueMax
  */
-export const toBoundedArray = <N>(arithmetic: Arithmetic<N>) => (valueMin: N, sumMax: N) => (quotients: Quotient<N>[]) => {
+export const toBoundedArray = <N>(arithmetic: Arithmetic<N>) => (valueMin: N, valueSumMax: N) => (quotients: Quotient<N>[]) => {
   const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
-  const sumMin = mul(valueMin, num(quotients.length))
-  const sumMaxLocal = sub(sumMax, sumMin)
+  const valueSumMin = mul(valueMin, num(quotients.length))
+  const valueSumMaxLocal = sub(valueSumMax, valueSumMin)
   const getQuotientArith = getQuotientOf(arithmetic)
-  assertBy(gt)(sumMaxLocal, zero, 'sumMaxLocal', 'zero')
-  return quotients.map(quotient => add(getQuotientArith(quotient)(sumMaxLocal), valueMin))
+  assertBy(gt)(valueSumMaxLocal, zero, 'valueSumMaxLocal', 'zero')
+  return quotients.map(quotient => add(getQuotientArith(quotient)(valueSumMaxLocal), valueMin))
 }
