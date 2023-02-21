@@ -222,9 +222,7 @@ test('a buy-sell cycle must return initial balances', async () => {
   const numerators = getNumeratorsArb(2)
   return assertRP(paramsArb, numerators, async (params, numerators) => {
     const context = getContext(params)
-    console.log('numerators', numerators)
     const [quoteDeltaAlice] = getQuoteDeltasFromBaseDeltaNumeratorsFullRangeC(context)(numerators)
-    console.log('quoteDeltaAlice', quoteDeltaAlice)
     const actions = [
       buy(context)(contract, alice, quoteDeltaAlice),
       selloff(context)(contract, alice),
@@ -294,7 +292,7 @@ test.skip('quoteOffset has inverse influence on profit', async () => {
         getProfitFromTuples(context),
       )
     })
-    console.log('profits', profits)
+    // console.log('profits', profits)
     const deviations = getDeltasA(profits)
     return deviations.every(lte(num(-1)))
   })
@@ -320,7 +318,7 @@ test.skip('baseLimit has zero influence on profit', async () => {
         getProfitFromTuples(context),
       )
     })
-    console.log('profits', profits)
+    // console.log('profits', profits)
     const deviations = getDeltasA(profits)
     return deviations.every(lte(num(1)))
   })

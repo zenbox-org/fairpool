@@ -25,3 +25,7 @@ export const DefaultWeight = getPercent(WeightScale, 30)
 export const ShareDecimals = bn(6)
 
 export const ShareScale = bn(10).pow(ShareDecimals)
+
+export const DefaultBaseLimit = bn(1000)
+
+export const DefaultQuoteOffset = bn(2000)
