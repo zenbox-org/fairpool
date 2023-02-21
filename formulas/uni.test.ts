@@ -243,8 +243,6 @@ test('a sequence of buy transactions must give progressively smaller base amount
     const actions = quoteDeltasMulti.map(quoteDelta => buy(context)(contract, alice, quoteDelta))
     const balancesEvolution = run(actions)(balancesInitial)
     const amountsBaseSenderEvolution = getAmountsEvolutionBaseAlice(balancesEvolution)
-    // const balancesEvolutionBaseSenderRendered = balancesBaseSenderEvolution.map(b => b.amount.toString())
-    // console.log('balancesEvolutionBaseSenderRendered', balancesEvolutionBaseSenderRendered)
     return isDescendingA(amountsBaseSenderEvolution)
   })
 })
