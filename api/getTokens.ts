@@ -1,7 +1,7 @@
 import { expect } from 'libs/utils/chai'
 import { todo } from 'libs/utils/todo'
 import { sortBy } from 'remeda'
-import { TransitionP } from '../../divide-and-conquer/TransitionP'
+import { TransitionP } from '../../divide-and-conquer/Transition'
 import { ensure, ensureByIndex } from '../../utils/ensure'
 import { Token } from '../models/Token'
 import { SessionParams } from './models/SessionParams'

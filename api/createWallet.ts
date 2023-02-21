@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { TransitionP } from '../../divide-and-conquer/TransitionP'
+import { TransitionP } from '../../divide-and-conquer/Transition'
 import { AmountBNSchema } from '../../ethereum/models/AmountBN'
 import { parseState, State } from './models/State'
 import { UserParamsSchema } from './models/UserParams'
