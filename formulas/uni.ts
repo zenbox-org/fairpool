@@ -1,76 +1,90 @@
 import { clone, createPipe, map, pipe, range } from 'remeda'
-import { Address } from '../../ethereum/models/Address'
-import { BalanceGen, BalanceGenTuple } from '../../finance/models/BalanceGen'
-import { toBalanceGenTuple } from '../../finance/models/BalanceGen/toBalanceGenTuple'
+import { BalanceGen, BalanceGenTuple } from '../../ethereum/models/BalanceGen'
+import { ReckGen, ReckGenTuple } from '../../finance/models/ReckGen'
+import { toReckGenTuple } from '../../finance/models/ReckGen/toReckGenTuple'
 import { Mutator } from '../../generic/models/Mutator'
 import { Arithmetic } from '../../utils/arithmetic'
 import { getAssert } from '../../utils/arithmetic/getAssert'
 import { getDeltas } from '../../utils/arithmetic/getDeltas'
-import { halve } from '../../utils/arithmetic/halve'
+import { halve as $halve } from '../../utils/arithmetic/halve'
 import { sumAmounts } from '../../utils/arithmetic/sum'
+import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
 import { inner, input, output } from '../../utils/debug'
 import { ensureFind, getFinder } from '../../utils/ensure'
 import { AssertionFailedError } from '../../utils/error'
 import { isEqualBy } from '../../utils/lodash'
 import { get__filename } from '../../utils/node'
 import { meldWithLast } from '../../utils/remeda/meldWithLast'
-import { WithToString } from '../../utils/string'
 import { toBoundedArray } from './arbitraries/toBoundedArray'
 import { toQuotients } from './arbitraries/toQuotients'
 
-export type Wallet = string
+export type Address = string
 
 export type Asset = string
 
-export type Balance<Amount> = BalanceGen<Wallet, Asset, Amount>
+export type Amount = bigint
 
-export type BalanceTuple<Amount> = BalanceGenTuple<Wallet, Asset, Amount>
+type N = Amount
 
-export interface Tally<Amount> { wallet: Wallet, amount: Amount }
+export type Reck = ReckGen<Address, Asset, Amount>
 
-export type TallyTuple<Amount> = [Wallet, Amount]
+export type ReckTuple = ReckGenTuple<Address, Asset, Amount>
 
-export type Action<N> = Mutator<Balance<N>[]>
+export type Balance = BalanceGen<Address, Amount>
 
-export interface BalancesBQ<Amount> {
-  base: Balance<Amount>
-  quote: Balance<Amount>
+export type BalanceTuple = BalanceGenTuple<Address, Amount>
+
+interface Fairpool {
+  balances: Balance[]
 }
 
-export interface AmountsBQ<Amount> {
+export interface State {
+  fairpools: Fairpool[]
+}
+
+export type Action = Mutator<Reck[]>
+
+export interface BalancesBQ {
+  base: Reck
+  quote: Reck
+}
+
+export interface AmountsBQ {
   base: Amount
   quote: Amount
 }
 
-export interface Context<N> extends Params<N> {
-  arithmetic: Arithmetic<N>
+export interface Context extends Params {
+  arithmetic: Arithmetic<Amount> // TODO: remove backwards compatibility
   baseAsset: Asset
   quoteAsset: Asset
 }
 
-export interface Params<N> {
-  baseLimit: N,
-  quoteOffset: N
+export interface Params {
+  baseLimit: Amount,
+  quoteOffset: Amount
 }
 
-export class BaseDeltaMustBeGreaterThanZero<N> extends AssertionFailedError<{ baseDelta: N }> {}
+const arithmetic = BigIntArithmetic
+const assert = getAssert(arithmetic)
+const halve = $halve(arithmetic)
+const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
 
-export class QuoteDeltaMustBeGreaterThanZero<N> extends AssertionFailedError<{ quoteDelta: N }> {}
+export class BaseDeltaMustBeGreaterThanZero extends AssertionFailedError<{ baseDelta: Amount }> {}
+
+export class QuoteDeltaMustBeGreaterThanZero extends AssertionFailedError<{ quoteDelta: Amount }> {}
 
 const __filename = get__filename(import.meta.url)
 
-export const toContextFun = <N, Rest>(f: (arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => Rest) => (context: Context<N>) => f(context.arithmetic)(context.baseLimit, context.quoteOffset)
+export const toContextFun = <Rest>(f: (baseLimit: N, quoteOffset: N) => Rest) => (context: Context) => f(context.baseLimit, context.quoteOffset)
 
-export const getBaseSupply = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (quoteSupply: N) => {
-  const { add, sub, mul, div } = arithmetic
+export const getBaseSupply = (baseLimit: N, quoteOffset: N) => (quoteSupply: N) => {
   const numerator = mul(baseLimit, quoteSupply)
   const denominator = add(quoteOffset, quoteSupply)
   return div(numerator, denominator)
 }
 
-export const getQuoteSupply = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseSupply: N) => {
-  const { add, sub, mul, div, eq } = arithmetic
-  const assert = getAssert(arithmetic)
+export const getQuoteSupply = (baseLimit: N, quoteOffset: N) => (baseSupply: N) => {
   assert.lt(baseSupply, baseLimit, 'baseSupply', 'baseLimit')
   const numerator = mul(quoteOffset, baseSupply)
   const denominator = sub(baseLimit, baseSupply)
@@ -79,71 +93,64 @@ export const getQuoteSupply = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, q
 
 export const getQuoteSupplyC = toContextFun(getQuoteSupply)
 
-export const getBaseDelta = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (quoteDeltaProposed: N) => {
-  const { add, sub, mul, div, gt, lte } = arithmetic
+export const getBaseDelta = (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (quoteDeltaProposed: N) => {
   const quoteSupplyNew = add(quoteSupplyCurrent, quoteDeltaProposed)
-  const baseSupplyNew = getBaseSupply(arithmetic)(baseLimit, quoteOffset)(quoteSupplyNew)
+  const baseSupplyNew = getBaseSupply(baseLimit, quoteOffset)(quoteSupplyNew)
   return sub(baseSupplyNew, baseSupplyCurrent)
 }
 
-export const getQuoteDelta = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (baseDeltaProposed: N) => {
-  const { add, sub, mul, div } = arithmetic
+export const getQuoteDelta = (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (baseDeltaProposed: N) => {
   const baseSupplyNew = sub(baseSupplyCurrent, baseDeltaProposed)
-  const quoteSupplyNew = getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(baseSupplyNew)
+  const quoteSupplyNew = getQuoteSupply(baseLimit, quoteOffset)(baseSupplyNew)
   return sub(quoteSupplyCurrent, quoteSupplyNew)
 }
 
 /**
  * quoteSupplyMax == quoteOffset * (baseLimit - 1)
  */
-export const getQuoteSupplyMax = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => {
-  const { add, sub, mul, div, one } = arithmetic
+export const getQuoteSupplyMax = (baseLimit: N, quoteOffset: N) => {
   return mul(quoteOffset, sub(baseLimit, one))
 }
 
 export const getQuoteSupplyMaxC = toContextFun(getQuoteSupplyMax)
 
-export const getQuoteSupplyMaxByDefinition = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => {
-  const { add, sub, mul, div, one } = arithmetic
-  return getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(sub(one)(baseLimit))
+export const getQuoteSupplyMaxByDefinition = (baseLimit: N, quoteOffset: N) => {
+  return getQuoteSupply(baseLimit, quoteOffset)(sub(one)(baseLimit))
 }
 
 export const getQuoteSupplyMaxByDefinitionC = toContextFun(getQuoteSupplyMaxByDefinition)
 
-export const getQuoteSupplyFor = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseSupply: N) => {
-  const { add, sub, mul, div, one } = arithmetic
+export const getQuoteSupplyFor = (baseLimit: N, quoteOffset: N) => (baseSupply: N) => {
   const baseSupplyNext = add(one)(baseSupply)
-  const quoteSupplyNext = getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(baseSupplyNext)
+  const quoteSupplyNext = getQuoteSupply(baseLimit, quoteOffset)(baseSupplyNext)
   return sub(one)(quoteSupplyNext)
 }
 
 export const getQuoteSupplyForC = toContextFun(getQuoteSupplyFor)
 
-export const getQuoteDeltaMin = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => getQuoteSupplyFor(arithmetic)(baseLimit, quoteOffset)(arithmetic.one)
+export const getQuoteDeltaMin = (baseLimit: N, quoteOffset: N) => getQuoteSupplyFor(baseLimit, quoteOffset)(arithmetic.one)
 
 export const getQuoteDeltaMinC = toContextFun(getQuoteDeltaMin)
 
 // /**
 //  * TODO: Rewrite to (quoteDeltaDefault: N) => (quoteDeltaMultipliers: N[])
 //  */
-// export const getQuoteDeltaNext = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (quoteDeltaPrev: N) => {
+// export const getQuoteDeltaNext = (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (quoteDeltaPrev: N) => {
 //   const { add, sub, mul, div, one } = arithmetic
-//   const deltas = getBuyDeltas(arithmetic)(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(quoteDeltaPrev)
+//   const deltas = getBuyDeltas(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(quoteDeltaPrev)
 //   const baseSupplyNew = add(deltas.baseDelta)(baseSupplyCurrent)
 //   const quoteSupplyNew = add(deltas.quoteDelta)(quoteSupplyCurrent)
-//   return getQuoteDeltaMin(arithmetic)(baseLimit, quoteOffset)(baseSupplyNew, quoteSupplyNew)
+//   return getQuoteDeltaMin(baseLimit, quoteOffset)(baseSupplyNew, quoteSupplyNew)
 // }
 
 /**
  * NOTE: actual deltas are always less than or equal to expected deltas (because of integer division)
  */
-export const getBuyDeltas = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (quoteDeltaProposed: N) => {
+export const getBuyDeltas = (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (quoteDeltaProposed: N) => {
   input(__filename, getBuyDeltas, { baseSupplyCurrent, quoteSupplyCurrent, quoteDeltaProposed })
-  const { zero, one, num, add, sub, mul, div, min, max, abs, eq, lt, gt, lte, gte } = arithmetic
-  const assert = getAssert(arithmetic)
   const quoteSupplyProposed = add(quoteSupplyCurrent, quoteDeltaProposed)
-  const baseSupplyNew = getBaseSupply(arithmetic)(baseLimit, quoteOffset)(quoteSupplyProposed)
-  const quoteSupplyNew = getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(baseSupplyNew)
+  const baseSupplyNew = getBaseSupply(baseLimit, quoteOffset)(quoteSupplyProposed)
+  const quoteSupplyNew = getQuoteSupply(baseLimit, quoteOffset)(baseSupplyNew)
   assert.lte(quoteSupplyNew, quoteSupplyProposed, 'quoteSupplyNew', 'quoteSupplyProposed')
   const baseDelta = sub(baseSupplyNew, baseSupplyCurrent)
   const quoteDelta = sub(quoteSupplyNew, quoteSupplyCurrent)
@@ -157,11 +164,10 @@ export const getBuyDeltas = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quo
  * NOTE: actual deltas are always less than or equal to expected deltas (because of integer division)
  * NOTE: sell deltas are positive, but they should be subtracted from the current balances (not added)
  */
-export const getSellDeltas = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (baseDeltaProposed: N) => {
+export const getSellDeltas = (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (baseDeltaProposed: N) => {
   input(__filename, getSellDeltas, { baseSupplyCurrent, quoteSupplyCurrent, baseDeltaProposed })
-  const { zero, one, num, add, sub, mul, div, min, max, abs, eq, lt, gt, lte, gte } = arithmetic
   const baseSupplyProposed = sub(baseSupplyCurrent, baseDeltaProposed)
-  const quoteSupplyProposed = getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(baseSupplyProposed)
+  const quoteSupplyProposed = getQuoteSupply(baseLimit, quoteOffset)(baseSupplyProposed)
   const baseDelta = sub(baseSupplyCurrent, baseSupplyProposed)
   const quoteDelta = sub(quoteSupplyCurrent, quoteSupplyProposed)
   inner(__filename, getSellDeltas, { baseDelta, quoteDelta })
@@ -170,50 +176,48 @@ export const getSellDeltas = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, qu
   return output(__filename, getSellDeltas, { baseDelta, quoteDelta })
 }
 
-export const byAssetWallet = (asset: Asset, wallet: Wallet) => <N>(balance: Balance<N>) => {
+export const byAssetWallet = (asset: Asset, wallet: Address) => (balance: Reck) => {
   return balance.asset === asset && balance.wallet === wallet
 }
 
-export const getBalancesBQ = (baseAsset: Asset, quoteAsset: Asset) => (wallet: Wallet) => <N>(balances: Balance<N>[]) => {
+export const getBalancesBQ = (baseAsset: Asset, quoteAsset: Asset) => (wallet: Address) => (balances: Reck[]) => {
   const base = getBalance(baseAsset)(wallet)(balances)
   const quote = getBalance(quoteAsset)(wallet)(balances)
   return { base, quote }
 }
 
-export const getAmountsBQ = (baseAsset: Asset, quoteAsset: Asset) => (wallet: Wallet) => <N>(balances: Balance<N>[]) => {
+export const getAmountsBQ = (baseAsset: Asset, quoteAsset: Asset) => (wallet: Address) => (balances: Reck[]) => {
   const balancesBQ = getBalancesBQ(baseAsset, quoteAsset)(wallet)(balances)
   return { base: balancesBQ.base.amount, quote: balancesBQ.quote.amount }
 }
 
-export const getBalance = (asset: Asset) => (wallet: Wallet) => <N>(balances: Balance<N>[]) => {
+export const getBalance = (asset: Asset) => (wallet: Address) => (balances: Reck[]) => {
   return ensureFind(balances, byAssetWallet(asset, wallet))
 }
 
-export const getAmount = (asset: Asset) => (wallet: Wallet) => <N>(balances: Balance<N>[]) => {
+export const getAmount = (asset: Asset) => (wallet: Address) => (balances: Reck[]) => {
   return getBalance(asset)(wallet)(balances).amount
 }
 
-const getBalanceMutators = <N>(arithmetic: Arithmetic<N>) => {
-  const { add, sub, mul, div } = arithmetic
+const getBalanceMutators = () => {
   return {
-    addB: (delta: N) => (balance: Balance<N>) => { balance.amount = add(balance.amount, delta) },
-    subB: (delta: N) => (balance: Balance<N>) => { balance.amount = sub(balance.amount, delta) },
-    mulB: (coefficient: N) => (balance: Balance<N>) => { balance.amount = mul(balance.amount, coefficient) },
-    divB: (coefficient: N) => (balance: Balance<N>) => { balance.amount = div(balance.amount, coefficient) },
-    sendB: (delta: N) => (from: Balance<N>, to: Balance<N>) => {
+    addB: (delta: N) => (reck: Reck) => { reck.amount = add(reck.amount, delta) },
+    subB: (delta: N) => (reck: Reck) => { reck.amount = sub(reck.amount, delta) },
+    mulB: (coefficient: N) => (reck: Reck) => { reck.amount = mul(reck.amount, coefficient) },
+    divB: (coefficient: N) => (reck: Reck) => { reck.amount = div(reck.amount, coefficient) },
+    sendB: (delta: N) => (from: Reck, to: Reck) => {
       from.amount = sub(from.amount, delta)
       to.amount = add(to.amount, delta)
     },
   }
 }
 
-export const getTotalSupply = <N>(arithmetic: Arithmetic<N>) => (asset: Asset) => (balances: Balance<N>[]) => sumAmounts(arithmetic)(balances.filter(b => b.asset === asset))
+export const getTotalSupply = (asset: Asset) => (recks: Reck[]) => sumAmounts(arithmetic)(recks.filter(b => b.asset === asset))
 
 /**
  * @deprecated
  */
-export const getQuoteSupplyAcceptableMax = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => {
-  const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
+export const getQuoteSupplyAcceptableMax = (baseLimit: N, quoteOffset: N) => {
   const two = add(one, one)
   const four = add(two, two)
   // 1/2 * (sqrt(4 * l * o + 1) - 2 * o - 1)
@@ -237,57 +241,51 @@ export const getQuoteSupplyAcceptableMaxC = toContextFun(getQuoteSupplyAcceptabl
  * if (baseSupply == baseSupplySuperlinearMin) quoteSupply >= initialPrice * baseSupply
  * if (baseSupply > baseSupplySuperlinearMin) quoteSupply > initialPrice * baseSupply
  */
-export const getBaseSupplySuperlinearMin = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => {
-  const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
-  const initialPrice = getInitialPrice(arithmetic)(baseLimit, quoteOffset)
+export const getBaseSupplySuperlinearMin = (baseLimit: N, quoteOffset: N) => {
+  const initialPrice = getInitialPrice(baseLimit, quoteOffset)
   const denominator = add(initialPrice, one)
   return div(baseLimit, denominator)
 }
 
 export const getBaseSupplySuperlinearMinC = toContextFun(getBaseSupplySuperlinearMin)
 
-export const getInitialPrice = <N>({ div }: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => {
-  return div(quoteOffset, baseLimit)
-}
+export const getInitialPrice = (baseLimit: N, quoteOffset: N) => div(quoteOffset, baseLimit)
 
-export const getBaseDeltasFromNumerators = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseDeltaMin: N, baseSupplyMax: N) => (numerators: number[]) => {
-  const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
+export const getBaseDeltasFromNumerators = (baseLimit: N, quoteOffset: N) => (baseDeltaMin: N, baseSupplyMax: N) => (numerators: number[]) => {
   const toQuotientsLocal = toQuotients(arithmetic)
   const toBoundedArrayLocal = toBoundedArray(arithmetic)(baseDeltaMin, baseSupplyMax)
   return pipe(numerators.map(num), toQuotientsLocal, toBoundedArrayLocal)
 }
 
-export const getBaseDeltasFromBaseDeltaNumeratorsSuperlinearSafe = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => {
-  const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
-  const baseSupplySuperlinearMin = getBaseSupplySuperlinearMin(arithmetic)(baseLimit, quoteOffset)
+export const getBaseDeltasFromBaseDeltaNumeratorsSuperlinearSafe = (baseLimit: N, quoteOffset: N) => {
+  const baseSupplySuperlinearMin = getBaseSupplySuperlinearMin(baseLimit, quoteOffset)
   const baseDeltaMin = max(one, baseSupplySuperlinearMin) // yes, max(), because baseDeltaMin must be gte one and gte baseSupplySuperlinearMin, but baseSupplySuperlinearMin may be eq zero
-  const baseSupplyMax = halve(arithmetic)(baseLimit)
-  return getBaseDeltasFromNumerators(arithmetic)(baseLimit, quoteOffset)(baseDeltaMin, baseSupplyMax)
+  const baseSupplyMax = halve(baseLimit)
+  return getBaseDeltasFromNumerators(baseLimit, quoteOffset)(baseDeltaMin, baseSupplyMax)
 }
 
-export const getBaseDeltasFromBaseDeltaNumeratorsFullRange = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => {
-  const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
+export const getBaseDeltasFromBaseDeltaNumeratorsFullRange = (baseLimit: N, quoteOffset: N) => {
   const baseSupplyMax = pipe(baseLimit, sub(one), sub(one)) // subtract twice because getQuoteSupplyFor does add(one)(baseSupply)
-  return getBaseDeltasFromNumerators(arithmetic)(baseLimit, quoteOffset)(one, baseSupplyMax)
+  return getBaseDeltasFromNumerators(baseLimit, quoteOffset)(one, baseSupplyMax)
 }
 
-export const getBaseSuppliesFromBaseDeltas = <N>({ add, zero }: Arithmetic<N>) => meldWithLast(add, zero)
+export const getBaseSuppliesFromBaseDeltas = meldWithLast(add, zero)
 
-export const getQuoteDeltasFromBaseDeltas = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseDeltas: N[]) => {
-  const baseSupplies = getBaseSuppliesFromBaseDeltas(arithmetic)(baseDeltas)
-  return baseSupplies.map(getQuoteSupplyFor(arithmetic)(baseLimit, quoteOffset))
+export const getQuoteDeltasFromBaseDeltas = (baseLimit: N, quoteOffset: N) => (baseDeltas: N[]) => {
+  const baseSupplies = getBaseSuppliesFromBaseDeltas(baseDeltas)
+  return baseSupplies.map(getQuoteSupplyFor(baseLimit, quoteOffset))
 }
 
 export const getQuoteDeltasFromBaseDeltasC = toContextFun(getQuoteDeltasFromBaseDeltas)
 
-export const getQuoteDeltasFromBaseDeltaNumeratorsSuperlinearSafe = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => createPipe(
-  getBaseDeltasFromBaseDeltaNumeratorsSuperlinearSafe(arithmetic)(baseLimit, quoteOffset),
-  getQuoteDeltasFromBaseDeltas(arithmetic)(baseLimit, quoteOffset)
+export const getQuoteDeltasFromBaseDeltaNumeratorsSuperlinearSafe = (baseLimit: N, quoteOffset: N) => createPipe(
+  getBaseDeltasFromBaseDeltaNumeratorsSuperlinearSafe(baseLimit, quoteOffset),
+  getQuoteDeltasFromBaseDeltas(baseLimit, quoteOffset)
 )
 
-export const getQuoteDeltasFromBaseDeltaNumeratorsFullRange = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => createPipe(
-  getBaseDeltasFromBaseDeltaNumeratorsFullRange(arithmetic)(baseLimit, quoteOffset),
-  getQuoteDeltasFromBaseDeltas(arithmetic)(baseLimit, quoteOffset)
+export const getQuoteDeltasFromBaseDeltaNumeratorsFullRange = (baseLimit: N, quoteOffset: N) => createPipe(
+  getBaseDeltasFromBaseDeltaNumeratorsFullRange(baseLimit, quoteOffset),
+  getQuoteDeltasFromBaseDeltas(baseLimit, quoteOffset)
 )
 
 export const getQuoteDeltasFromBaseDeltaNumeratorsFullRangeC = toContextFun(getQuoteDeltasFromBaseDeltaNumeratorsFullRange)
@@ -295,10 +293,8 @@ export const getQuoteDeltasFromBaseDeltaNumeratorsFullRangeC = toContextFun(getQ
 /**
  * Currently this function is called in every action. This is suboptimal, must be refactored (requires moving baseLimit and quoteOffset to State)
  */
-export const validateContext = <N>(context: Context<N>) => {
+export const validateContext = (context: Context) => {
   const { arithmetic, baseAsset, quoteAsset, baseLimit, quoteOffset } = context
-  const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
-  const assert = getAssert(arithmetic)
   const quoteOffsetCalculated = pipe(quoteOffset, div(baseLimit), mul(baseLimit))
   assert.gt(baseLimit, zero, 'baseLimit', 'zero')
   assert.gt(quoteOffset, zero, 'quoteOffset', 'zero')
@@ -307,14 +303,12 @@ export const validateContext = <N>(context: Context<N>) => {
   return context
 }
 
-export const validateBalances = <N>(context: Context<N>) => (contract: Address) => (balances: Balance<N>[]) => {
+export const validateBalances = (context: Context) => (contract: Address) => (balances: Reck[]) => {
   const { arithmetic, baseAsset, quoteAsset, baseLimit, quoteOffset } = context
-  const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
-  const assert = getAssert(arithmetic)
-  const baseSupplyActual = getTotalSupply(arithmetic)(baseAsset)(balances)
+  const baseSupplyActual = getTotalSupply(baseAsset)(balances)
   const quoteSupplyActual = getAmount(quoteAsset)(contract)(balances)
-  const baseSupplyExpected = getBaseSupply(arithmetic)(baseLimit, quoteOffset)(quoteSupplyActual)
-  const quoteSupplyExpected = getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(baseSupplyActual)
+  const baseSupplyExpected = getBaseSupply(baseLimit, quoteOffset)(quoteSupplyActual)
+  const quoteSupplyExpected = getQuoteSupply(baseLimit, quoteOffset)(baseSupplyActual)
   // inter(__filename, validateBalances, { baseSupplyActual, baseSupplyExpected })
   // inter(__filename, validateBalances, { quoteSupplyActual, quoteSupplyExpected })
   assert.gte(baseSupplyActual, baseSupplyExpected, 'baseSupplyActual', 'baseSupplyExpected', 'baseSupply* must be gte, not eq, because they are calculated imprecisely from quoteSupply')
@@ -323,64 +317,61 @@ export const validateBalances = <N>(context: Context<N>) => (contract: Address) 
   return balances
 }
 
-export const buy = <N extends WithToString>(context: Context<N>) => (contract: Address, sender: Address, quoteDeltaProposed: N) => ($balances: Balance<N>[]) => {
+export const buy = (context: Context) => (contract: Address, sender: Address, quoteDeltaProposed: N) => ($balances: Reck[]) => {
   input(__filename, buy, { action: 'buy', contract, sender, quoteDeltaProposed })
   const { arithmetic, baseAsset, quoteAsset, baseLimit, quoteOffset } = validateContext(context)
-  const { add, sub, mul, div, zero, gt, gte } = arithmetic
-  const { addB, subB, mulB, divB, sendB } = getBalanceMutators(arithmetic)
+  const { addB, subB, mulB, divB, sendB } = getBalanceMutators()
   const balances = clone($balances)
   const getBalancesLocal = getBalancesBQ(baseAsset, quoteAsset)
   const balancesContract = getBalancesLocal(contract)(balances)
   const balancesSender = getBalancesLocal(sender)(balances)
-  const baseSupplyCurrent = getTotalSupply(arithmetic)(baseAsset)(balances)
+  const baseSupplyCurrent = getTotalSupply(baseAsset)(balances)
   const quoteSupplyCurrent = balancesContract.quote.amount
-  const { baseDelta, quoteDelta } = getBuyDeltas(arithmetic)(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(quoteDeltaProposed)
+  const { baseDelta, quoteDelta } = getBuyDeltas(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(quoteDeltaProposed)
   sendB(quoteDelta)(balancesSender.quote, balancesContract.quote)
   addB(baseDelta)(balancesSender.base)
   return validateBalances(context)(contract)(balances)
 }
 
-export const sell = <N extends WithToString>(context: Context<N>) => (contract: Address, sender: Address, baseDeltaProposed: N) => ($balances: Balance<N>[]) => {
+export const sell = (context: Context) => (contract: Address, sender: Address, baseDeltaProposed: N) => ($balances: Reck[]) => {
   input(__filename, sell, { action: 'sell', contract, sender, baseDeltaProposed })
   const { arithmetic, baseAsset, quoteAsset, baseLimit, quoteOffset } = validateContext(context)
-  const { add, sub, mul, div, zero, gt, gte } = arithmetic
-  const { addB, subB, mulB, divB, sendB } = getBalanceMutators(arithmetic)
+  const { addB, subB, mulB, divB, sendB } = getBalanceMutators()
   const balances = clone($balances)
   const getBalancesLocal = getBalancesBQ(baseAsset, quoteAsset)
   const balancesContract = getBalancesLocal(contract)(balances)
   const balancesSender = getBalancesLocal(sender)(balances)
-  const baseSupplyCurrent = getTotalSupply(arithmetic)(baseAsset)(balances)
+  const baseSupplyCurrent = getTotalSupply(baseAsset)(balances)
   const quoteSupplyCurrent = balancesContract.quote.amount
-  const { baseDelta, quoteDelta } = getSellDeltas(arithmetic)(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(baseDeltaProposed)
+  const { baseDelta, quoteDelta } = getSellDeltas(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(baseDeltaProposed)
   sendB(quoteDelta)(balancesContract.quote, balancesSender.quote)
   subB(baseDelta)(balancesSender.base)
   return validateBalances(context)(contract)(balances)
 }
 
-export const selloff = <N extends WithToString>(context: Context<N>) => (contract: Address, sender: Address) => ($balances: Balance<N>[]) => {
+export const selloff = (context: Context) => (contract: Address, sender: Address) => ($balances: Reck[]) => {
   const { baseAsset, quoteAsset } = validateContext(context)
   const baseDelta = getBalancesBQ(baseAsset, quoteAsset)(sender)($balances).base.amount
   // const amountQuoteSender = getAmount(balances)(quoteAsset)(sender)
   return sell(context)(contract, sender, baseDelta)($balances)
 }
 
-export const getBalanceRendered = <N extends WithToString>(balance: Balance<N>) => toBalanceGenTuple(balance).map(v => v.toString())
+export const getBalanceRendered = (balance: Reck) => toReckGenTuple(balance).map(v => v.toString())
 
 export const getBalancesRendered = map(getBalanceRendered)
 
-export const getBalancesEvolution = <N>(asset: string, sender: string) => (balancesEvolution: Balance<N>[][]) => balancesEvolution.map(getFinder(byAssetWallet(asset, sender)))
+export const getBalancesEvolution = (asset: string, sender: string) => (balancesEvolution: Reck[][]) => balancesEvolution.map(getFinder(byAssetWallet(asset, sender)))
 
-export const getStats = <N>(context: Context<N>) => (scale: N) => (start: number, end: number, multiplier: number) => {
+export const getStats = (context: Context) => (scale: N) => (start: number, end: number, multiplier: number) => {
   const { arithmetic, baseAsset, quoteAsset, baseLimit, quoteOffset } = context
-  const { zero, one, num, add, sub, mul, div, min, max, abs, eq, lt, gt, lte, gte } = arithmetic
   const upscale = mul(scale)
   const baseLimitScaled = upscale(baseLimit)
   const quoteOffsetScaled = upscale(quoteOffset)
-  const quoteSupplyAcceptableMax = getQuoteSupplyAcceptableMax(arithmetic)(baseLimitScaled, quoteOffsetScaled)
+  const quoteSupplyAcceptableMax = getQuoteSupplyAcceptableMax(baseLimitScaled, quoteOffsetScaled)
   return range(start, end).map(n => {
     const quoteSupply = upscale(num(n * multiplier))
-    const baseSupplyCalc = getBaseSupply(arithmetic)(baseLimitScaled, quoteOffsetScaled)(quoteSupply)
-    const quoteSupplyCalc = getQuoteSupply(arithmetic)(baseLimitScaled, quoteOffsetScaled)(baseSupplyCalc)
+    const baseSupplyCalc = getBaseSupply(baseLimitScaled, quoteOffsetScaled)(quoteSupply)
+    const quoteSupplyCalc = getQuoteSupply(baseLimitScaled, quoteOffsetScaled)(baseSupplyCalc)
     const diff = sub(quoteSupply, quoteSupplyCalc)
     const isOptimal = diff === 0n && quoteSupply !== 0n
     const isAcceptableMax = eq(quoteSupply, quoteSupplyAcceptableMax)
@@ -388,9 +379,9 @@ export const getStats = <N>(context: Context<N>) => (scale: N) => (start: number
   })
 }
 
-export const getPrices = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (quoteSupplyFrom$: number, quoteSupplyTo$: number) => {
+export const getPrices = (baseLimit: N, quoteOffset: N) => (quoteSupplyFrom$: number, quoteSupplyTo$: number) => {
   const quoteSupplyArr = range(quoteSupplyFrom$, quoteSupplyTo$).map(arithmetic.num)
-  const baseSupplyArr = quoteSupplyArr.map(getBaseSupply(arithmetic)(baseLimit, quoteOffset))
+  const baseSupplyArr = quoteSupplyArr.map(getBaseSupply(baseLimit, quoteOffset))
   return getDeltas(arithmetic)(baseSupplyArr)
 }
 

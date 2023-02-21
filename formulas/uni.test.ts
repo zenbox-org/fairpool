@@ -2,7 +2,7 @@ import { test } from '@jest/globals'
 import { assert, asyncProperty, bigInt, integer, nat, property, record } from 'fast-check'
 import { countBy, createPipe, identity, last, map, pick, pipe, sort, times, uniq, zip } from 'remeda'
 import { uint256Max } from '../../bn/constants'
-import { getBalancesGenInitial } from '../../finance/models/BalanceGen/getBalancesGenInitial'
+import { getRecksGenInitial } from '../../finance/models/ReckGen/getRecksGenInitial'
 import { MutatorV } from '../../generic/models/Mutator'
 import { clamp } from '../../utils/arithmetic/clamp'
 import { getAssert } from '../../utils/arithmetic/getAssert'
@@ -20,13 +20,14 @@ import { stringify } from '../../utils/JSON'
 import { get__filename } from '../../utils/node'
 import { sequentialReducePushV } from '../../utils/promise'
 import { after } from '../../utils/remeda/wrap'
+import { todo } from '../../utils/todo'
 import { getNumeratorsArb } from './arbitraries/getNumeratorsArb'
-import { Action, Balance, buy, Context, getAmount, getAmountsBQ, getBalancesBQ, getBalancesEvolution, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinC, getPricesC, getQuoteDeltaMinC, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeC, getQuoteDeltasFromBaseDeltaNumeratorsSuperlinearSafe, getQuoteDeltasFromBaseDeltasC, getQuoteSupplyAcceptableMaxC, getQuoteSupplyFor, getQuoteSupplyForC, getQuoteSupplyMax, getQuoteSupplyMaxByDefinitionC, getQuoteSupplyMaxC, getStats, getTotalSupply, Params, selloff, TallyTuple, validateContext, Wallet } from './uni'
+import { Action, Address, BalanceTuple, buy, Context, getAmount, getAmountsBQ, getBalancesBQ, getBalancesEvolution, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinC, getPricesC, getQuoteDeltaMinC, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeC, getQuoteDeltasFromBaseDeltaNumeratorsSuperlinearSafe, getQuoteDeltasFromBaseDeltasC, getQuoteSupplyFor, getQuoteSupplyForC, getQuoteSupplyMax, getQuoteSupplyMaxByDefinitionC, getQuoteSupplyMaxC, getStats, getTotalSupply, Params, Reck, selloff, validateContext } from './uni'
 import { assertBalances } from './uni.test.helpers'
 
 type N = bigint
 
-interface PreContext<N> {
+interface PreContext {
   baseLimit: N
   quoteOffsetMultiplier: N
 }
@@ -39,14 +40,14 @@ const wallets = ['contract', 'alice', 'bob']
 const assets = ['ABC', 'ETH']
 const [contract, alice, bob] = wallets
 const [base, quote] = assets
-const getParams = ({ quoteOffsetMultiplier, baseLimit }: PreContext<N>) => ({ baseLimit, quoteOffset: mul(baseLimit, quoteOffsetMultiplier) })
-const getContext = (params: Params<N>): Context<N> => validateContext({ arithmetic, baseAsset: base, quoteAsset: quote, ...params })
+const getParams = ({ quoteOffsetMultiplier, baseLimit }: PreContext) => ({ baseLimit, quoteOffset: mul(baseLimit, quoteOffsetMultiplier) })
+const getContext = (params: Params): Context => validateContext({ arithmetic, baseAsset: base, quoteAsset: quote, ...params })
 const getContextFromPreContext = createPipe(getParams, getContext)
 const baseLimitConstraints = { min: 1000n, max: uint256Max.toBigInt() }
 const quoteOffsetMultiplierConstraints = { min: 2n, max: 200n }
 const quoteOffsetMultiplierArb = bigInt(quoteOffsetMultiplierConstraints)
 const baseLimitArb = bigInt(baseLimitConstraints)
-const preContextArb = record<PreContext<N>>({
+const preContextArb = record<PreContext>({
   quoteOffsetMultiplier: quoteOffsetMultiplierArb,
   baseLimit: baseLimitArb,
 })
@@ -65,23 +66,23 @@ const quoteDeltaDefault = getQuoteDeltaMinC(contextDefault)
 //   quoteAsset: quote,
 // }
 // const quoteDelta = num(100)
-const balancesInitial: Balance<N>[] = getBalancesGenInitial(zero)(wallets, assets)
+const balancesInitial: Reck[] = getRecksGenInitial(zero)(wallets, assets)
 const getDeltasA = getDeltas(arithmetic)
 const isDescendingA = isDescending(arithmetic)
 const getBalances = getBalancesBQ(base, quote)
 const getAmounts = getAmountsBQ(base, quote)
-const getBalancesStats = (balances: Balance<N>[]) => ({ alice: getAmounts(alice)(balances), bob: getAmounts(bob)(balances) })
-const dbgBalancesStatsAction = (balances: Balance<N>[]) => {
+const getBalancesStats = (balances: Reck[]) => ({ alice: getAmounts(alice)(balances), bob: getAmounts(bob)(balances) })
+const dbgBalancesStatsAction = (balances: Reck[]) => {
   const stats = getBalancesStats(balances)
   dbgS(__filename, 'dbgBalancesStats', 'inter', stats)
   return balances
 }
-const getPreContextFromContext = pick<Context<N>, keyof Context<N>>(['baseLimit', 'quoteOffset'])
-const dbgContextAction = (context: Context<N>) => (balances: Balance<N>[]) => {
+const getPreContextFromContext = pick<Context, keyof Context>(['baseLimit', 'quoteOffset'])
+const dbgContextAction = (context: Context) => (balances: Reck[]) => {
   dbg(__filename, dbgContextAction, 'input', getPreContextFromContext(context))
   return balances
 }
-const getBalancesEvolutionBaseAlice = getBalancesEvolution<N>(base, alice)
+const getBalancesEvolutionBaseAlice = getBalancesEvolution(base, alice)
 const getAmountsEvolutionBaseAlice = createPipe(getBalancesEvolutionBaseAlice, map(b => b.amount))
 const sumAmountsEvolutionBaseAlice = createPipe(getAmountsEvolutionBaseAlice, sum(arithmetic))
 const __filename = get__filename(import.meta.url)
@@ -96,7 +97,7 @@ const run = <Val, Args extends unknown[]>(mutators: MutatorV<Val, Args>[], ...ar
   return results
 }
 
-const getProfitFromActions = (context: Context<N>) => (seller: Wallet) => (actions: Action<N>[]) => {
+const getProfitFromActions = (context: Context) => (seller: Address) => (actions: Action[]) => {
   const balancesEvolution = run(actions)(balancesInitial)
   const balancesFinal = last(balancesEvolution)
   const getAmountLocal = getAmount(quote)(seller)
@@ -104,12 +105,12 @@ const getProfitFromActions = (context: Context<N>) => (seller: Wallet) => (actio
   const amountFinal = getAmountLocal(balancesFinal)
   return sub(amountFinal, amountInitial)
 }
-const getProfitFromTuples = (context: Context<N>) => (tuples: NonEmptyArray<TallyTuple<N>>) => {
+const getProfitFromTuples = (context: Context) => (tuples: NonEmptyArray<BalanceTuple>) => {
   const seller = tuples[0][0]
   const actions = getActionsLeadingToProfit(context)(tuples)
   return getProfitFromActions(context)(seller)(actions)
 }
-const getActionsLeadingToProfit = (context: Context<N>) => (tuples: NonEmptyArray<TallyTuple<N>>): NonEmptyArray<Action<N>> => {
+const getActionsLeadingToProfit = (context: Context) => (tuples: NonEmptyArray<BalanceTuple>): NonEmptyArray<Action> => {
   const seller = tuples[0][0]
   const buys = tuples.map(([wallet, delta]) => buy(context)(contract, wallet, delta))
   const actions = [
@@ -118,12 +119,12 @@ const getActionsLeadingToProfit = (context: Context<N>) => (tuples: NonEmptyArra
   ].map(after(dbgBalancesStatsAction))
   return [dbgContextAction(context), ...actions]
 }
-const getEqualTuplesFromWallets = (context: Context<N>) => (wallets: Wallet[]) => {
+const getEqualTuplesFromWallets = (context: Context) => (wallets: Address[]) => {
   // NOTE: The baseDeltas for each wallet will be equal to (baseLimit - 1) / wallets.length
   const baseDeltaNumerators = wallets.map(_ => 1)
   return getTuplesFromWalletsAndNumerators(context)(wallets, baseDeltaNumerators)
 }
-const getTuplesFromWalletsAndNumerators = (context: Context<N>) => (wallets: Wallet[], baseDeltaNumerators: number[]) => {
+const getTuplesFromWalletsAndNumerators = (context: Context) => (wallets: Address[], baseDeltaNumerators: number[]) => {
   assertEq(wallets.length, baseDeltaNumerators.length, 'wallets.length', 'baseDeltaNumerators.length')
   const quoteDeltas = getQuoteDeltasFromBaseDeltaNumeratorsFullRangeC(context)(baseDeltaNumerators)
   return zip(wallets, quoteDeltas)
@@ -132,7 +133,7 @@ const getTuplesFromWalletsAndNumerators = (context: Context<N>) => (wallets: Wal
 export const getStatsString = () => {
   // const scale = 1n
   const context = getContext({ baseLimit: 20000n, quoteOffset: 100000n })
-  const quoteSupplyAcceptableMax = getQuoteSupplyAcceptableMaxC(context)
+  const quoteSupplyAcceptableMax = todo(1n)
   const scale = 10n ** 18n
   const quoteSupplyOptimalMaxN = parseInt(quoteSupplyAcceptableMax.toString())
   const width = 50
@@ -275,7 +276,7 @@ test('sum of buys must be lte to buy of sums', async () => {
 test.skip('quoteOffset has inverse influence on profit', async () => {
   // const minQuoteOffsetIncrement = div(contextDefault.quoteOffset, num(5)) // otherwise the difference between old quoteOffset and new quoteOffset becomes too small
   // const anyQuoteOffsetIncrement = bigInt({ min: minQuoteOffsetIncrement })
-  const wallets: NonEmptyArray<Wallet> = [alice, bob]
+  const wallets: NonEmptyArray<Address> = [alice, bob]
   const quoteOffsetMultiplierArb = bigInt(increasingMultiplierConstraints)
   const baseDeltaNumeratorsArb = getNumeratorsArb(wallets.length)
   return assertRP(paramsArb, quoteOffsetMultiplierArb, baseDeltaNumeratorsArb, async (params, quoteOffsetMultiplier, baseDeltaNumerators) => {
@@ -297,7 +298,7 @@ test.skip('quoteOffset has inverse influence on profit', async () => {
 })
 
 test.skip('baseLimit has zero influence on profit', async () => {
-  const wallets: NonEmptyArray<Wallet> = [alice, bob]
+  const wallets: NonEmptyArray<Address> = [alice, bob]
   const baseDeltaNumeratorsArb = getNumeratorsArb(wallets.length)
   return assertRP(baseLimitArb, increasingMultiplierArb, increasingMultiplierArb, baseDeltaNumeratorsArb, async (baseLimit, baseLimitMultiplier, quoteOffsetMultiplier, baseDeltaNumerators) => {
     // const preContextB = { ...preContextA, quoteOffsetMultiplier: add(quoteOffsetMultiplierIncrement)(preContextA.quoteOffsetMultiplier) }
@@ -329,7 +330,7 @@ test(getQuoteSupplyFor.name, async () => {
     const baseSupplyExpected = clamp(context.arithmetic)(one, context.baseLimit)(baseSupplyExpectedIn)
     const quoteSupply = getQuoteSupplyForC(context)(baseSupplyExpected)
     const balances = buy(context)(contract, alice, quoteSupply)(balancesInitial)
-    const baseSupplyActual = getTotalSupply(context.arithmetic)(base)(balances)
+    const baseSupplyActual = getTotalSupply(base)(balances)
     expect(baseSupplyActual).toEqual(baseSupplyExpected)
   }), await getAssertParametersForReplay({ verbose: true }))
 })
@@ -374,10 +375,10 @@ test('3rd party buy orders have direct influence on profit', async () => {
     const upscale = mul(num(2))
     const baseLimit = params.baseLimit
     const quoteOffset = pipe(params.quoteOffset, upscale, upscale) // NOTE: this is a hack to ensure that baseDeltaMin * numerators.length < baseSupplyMax, some tests may fail if the double upscale is not sufficient
-    const baseSupplySuperlinearMin = getBaseSupplySuperlinearMin(arithmetic)(baseLimit, quoteOffset)
+    const baseSupplySuperlinearMin = getBaseSupplySuperlinearMin(baseLimit, quoteOffset)
     inner(__filename, mapArgs, { baseLimit, quoteOffset, baseSupplySuperlinearMin })
     const numeratorsNew = sort(numerators, ofNumbers) // ensure that numeratorBob2 is gt numeratorBob1
-    const [quoteDeltaAlice, quoteDeltaBob1, quoteDeltaBob2] = getQuoteDeltasFromBaseDeltaNumeratorsSuperlinearSafe(arithmetic)(baseLimit, quoteOffset)(numeratorsNew)
+    const [quoteDeltaAlice, quoteDeltaBob1, quoteDeltaBob2] = getQuoteDeltasFromBaseDeltaNumeratorsSuperlinearSafe(baseLimit, quoteOffset)(numeratorsNew)
     assertBy(lt)(quoteDeltaBob1, quoteDeltaBob2, 'quoteDeltaBob1', 'quoteDeltaBob2')
     const scenarios = [
       [quoteDeltaAlice, quoteDeltaBob1],
