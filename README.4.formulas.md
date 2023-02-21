@@ -1,17 +1,6 @@
 # Fairpool formulas
 
-NOTE: Must be merged with [README.1.formulas.md](./README.1.formulas.md)
-
-Outline:
-
-* These formulas imply that there is a quoteSupplyMax, after which baseSupplyDelta < 1 (impossible with integer arithmetic)
-* These formulas imply there is a necessary downscale step (formula has to be applied twice, with refund to buyer)
-
-Notes:
-
-* Variables ending with "F" are unscaled floats
-
-## baseDeltaF
+## baseDelta and quoteDelta
 
 ```typescript
 x * y == k // Uniswap formula
@@ -179,5 +168,4 @@ quoteSupplyMax == (baseLimit - 1) * quoteOffset / (baseLimit - baseLimit + 1)
 quoteSupplyMax == (baseLimit - 1) * quoteOffset / (1)
 quoteSupplyMax == baseLimit * quoteOffset - quoteOffset
 quoteSupplyMax == quoteOffset * (baseLimit - 1)
-
 ```

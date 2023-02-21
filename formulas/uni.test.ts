@@ -14,7 +14,7 @@ import { ensureNonEmptyArray, NonEmptyArray } from '../../utils/array/ensureNonE
 import { ofNumbers } from '../../utils/array/sort'
 import { assertBy, assertEq } from '../../utils/assert'
 import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
-import { dbg, dbgS, debug, input, inter, output } from '../../utils/debug'
+import { dbg, dbgS, debug, inner, input, output } from '../../utils/debug'
 import { assertR, assertRP, getAssertParametersForReplay } from '../../utils/fast-check/replay'
 import { stringify } from '../../utils/JSON'
 import { get__filename } from '../../utils/node'
@@ -379,7 +379,7 @@ test('3rd party buy orders have direct influence on profit', async () => {
     const baseLimit = params.baseLimit
     const quoteOffset = pipe(params.quoteOffset, upscale, upscale) // NOTE: this is a hack to ensure that baseDeltaMin * numerators.length < baseSupplyMax, some tests may fail if the double upscale is not sufficient
     const baseSupplySuperlinearMin = getBaseSupplySuperlinearMin(arithmetic)(baseLimit, quoteOffset)
-    inter(__filename, mapArgs, { baseLimit, quoteOffset, baseSupplySuperlinearMin })
+    inner(__filename, mapArgs, { baseLimit, quoteOffset, baseSupplySuperlinearMin })
     const numeratorsNew = sort(numerators, ofNumbers) // ensure that numeratorBob2 is gt numeratorBob1
     const [quoteDeltaAlice, quoteDeltaBob1, quoteDeltaBob2] = getQuoteDeltasFromBaseDeltaNumeratorsSuperlinearSafe(arithmetic)(baseLimit, quoteOffset)(numeratorsNew)
     assertBy(lt)(quoteDeltaBob1, quoteDeltaBob2, 'quoteDeltaBob1', 'quoteDeltaBob2')

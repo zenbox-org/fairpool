@@ -9,7 +9,7 @@ import { getDeltas } from '../../utils/arithmetic/getDeltas'
 import { halve } from '../../utils/arithmetic/halve'
 import { sumAmounts } from '../../utils/arithmetic/sum'
 import { assertBy } from '../../utils/assert'
-import { input, inter, output } from '../../utils/debug'
+import { inner, input, output } from '../../utils/debug'
 import { ensureFind, getFinder } from '../../utils/ensure'
 import { AssertionFailedError } from '../../utils/error'
 import { isEqualBy } from '../../utils/lodash'
@@ -168,7 +168,7 @@ export const getSellDeltas = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, qu
   const quoteSupplyProposed = getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(baseSupplyProposed)
   const baseDelta = sub(baseSupplyCurrent, baseSupplyProposed)
   const quoteDelta = sub(quoteSupplyCurrent, quoteSupplyProposed)
-  inter(__filename, getSellDeltas, { baseDelta, quoteDelta })
+  inner(__filename, getSellDeltas, { baseDelta, quoteDelta })
   if (!gt(zero)(baseDelta)) throw new BaseDeltaMustBeGreaterThanZero({ baseDelta })
   if (!gt(zero)(quoteDelta)) throw new QuoteDeltaMustBeGreaterThanZero({ quoteDelta })
   return output(__filename, getSellDeltas, { baseDelta, quoteDelta })
