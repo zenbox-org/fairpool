@@ -8,7 +8,6 @@ import { getAssert } from '../../utils/arithmetic/getAssert'
 import { getDeltas } from '../../utils/arithmetic/getDeltas'
 import { halve } from '../../utils/arithmetic/halve'
 import { sumAmounts } from '../../utils/arithmetic/sum'
-import { assertBy } from '../../utils/assert'
 import { inner, input, output } from '../../utils/debug'
 import { ensureFind, getFinder } from '../../utils/ensure'
 import { AssertionFailedError } from '../../utils/error'
@@ -141,14 +140,11 @@ export const getQuoteDeltaMinC = toContextFun(getQuoteDeltaMin)
 export const getBuyDeltas = <N>(arithmetic: Arithmetic<N>) => (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (quoteDeltaProposed: N) => {
   input(__filename, getBuyDeltas, { baseSupplyCurrent, quoteSupplyCurrent, quoteDeltaProposed })
   const { zero, one, num, add, sub, mul, div, min, max, abs, eq, lt, gt, lte, gte } = arithmetic
+  const assert = getAssert(arithmetic)
   const quoteSupplyProposed = add(quoteSupplyCurrent, quoteDeltaProposed)
   const baseSupplyNew = getBaseSupply(arithmetic)(baseLimit, quoteOffset)(quoteSupplyProposed)
   const quoteSupplyNew = getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(baseSupplyNew)
-  // inter(__filename, getBuyDeltas, { quoteSupplyProposed, baseSupplyProposed: baseSupplyNew, quoteSupplyNew })
-  // const baseSupplyNew = getBaseSupply(arithmetic)(baseLimit, quoteOffset)(quoteSupplyNew)
-  // dbg(__filename, getBuyDeltas, { baseSupplyProposed, quoteSupplyProposed, baseSupplyNew, quoteSupplyNew })
-  assertBy(lte)(quoteSupplyNew, quoteSupplyProposed, 'quoteSupplyNew', 'quoteSupplyProposed')
-  // assertBy(lte)(baseSupplyNew, baseSupplyProposed, 'baseSupplyNew', 'baseSupplyProposed')
+  assert.lte(quoteSupplyNew, quoteSupplyProposed, 'quoteSupplyNew', 'quoteSupplyProposed')
   const baseDelta = sub(baseSupplyNew, baseSupplyCurrent)
   const quoteDelta = sub(quoteSupplyNew, quoteSupplyCurrent)
   // inter(__filename, getBuyDeltas, { baseDelta, quoteDelta })
@@ -314,15 +310,16 @@ export const validateContext = <N>(context: Context<N>) => {
 export const validateBalances = <N>(context: Context<N>) => (contract: Address) => (balances: Balance<N>[]) => {
   const { arithmetic, baseAsset, quoteAsset, baseLimit, quoteOffset } = context
   const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
+  const assert = getAssert(arithmetic)
   const baseSupplyActual = getTotalSupply(arithmetic)(baseAsset)(balances)
   const quoteSupplyActual = getAmount(quoteAsset)(contract)(balances)
   const baseSupplyExpected = getBaseSupply(arithmetic)(baseLimit, quoteOffset)(quoteSupplyActual)
   const quoteSupplyExpected = getQuoteSupply(arithmetic)(baseLimit, quoteOffset)(baseSupplyActual)
   // inter(__filename, validateBalances, { baseSupplyActual, baseSupplyExpected })
   // inter(__filename, validateBalances, { quoteSupplyActual, quoteSupplyExpected })
-  assertBy(gte)(baseSupplyActual, baseSupplyExpected, 'baseSupplyActual', 'baseSupplyExpected', 'baseSupply* must be gte, not eq, because they are calculated imprecisely from quoteSupply')
-  assertBy(eq)(quoteSupplyActual, quoteSupplyExpected, 'quoteSupplyActual', 'quoteSupplyExpected', 'quoteSupply* must be eq, not lte, because they are calculated precisely from baseSupply')
-  assertBy(isEqualBy(eq(zero)), 'isEqualBy(eq(zero))')(baseSupplyActual, quoteSupplyActual, 'baseSupplyActual', 'quoteSupplyActual') // isZero(baseSupplyActual) === isZero(quoteSupplyActual)
+  assert.gte(baseSupplyActual, baseSupplyExpected, 'baseSupplyActual', 'baseSupplyExpected', 'baseSupply* must be gte, not eq, because they are calculated imprecisely from quoteSupply')
+  assert.eq(quoteSupplyActual, quoteSupplyExpected, 'quoteSupplyActual', 'quoteSupplyExpected', 'quoteSupply* must be eq, not lte, because they are calculated precisely from baseSupply')
+  assert.by(isEqualBy(eq(zero)), 'isEqualBy(eq(zero))')(baseSupplyActual, quoteSupplyActual, 'baseSupplyActual', 'quoteSupplyActual') // isZero(baseSupplyActual) === isZero(quoteSupplyActual)
   return balances
 }
 

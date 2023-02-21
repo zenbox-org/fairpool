@@ -1,7 +1,7 @@
 import { bn, getPercent } from '../bn/utils'
 import { DefaultDecimals as $QuoteDecimals, DefaultScale as $QuoteScale } from '../ethereum/constants'
 
-// updated to 18 after switch to Bancor formula
+// updated to 24 after switch to Uni formula
 export const BaseDecimals = bn(18)
 
 export const BaseScale = bn(10).pow(BaseDecimals)
