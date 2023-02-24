@@ -1,22 +1,25 @@
-import { clone, createPipe, map, pipe, range } from 'remeda'
-import { BalanceGen, BalanceGenTuple } from '../../ethereum/models/BalanceGen'
-import { ReckGen, ReckGenTuple } from '../../finance/models/ReckGen'
-import { toReckGenTuple } from '../../finance/models/ReckGen/toReckGenTuple'
+import { createPipe, map, pick, pipe } from 'remeda'
+import { asSafeMutator } from '../../divide-and-conquer/asSafeMutator'
+import { BalanceGen, BalanceGenTuple } from '../../finance/models/BalanceGen'
+import { FintGen, FintGenTuple } from '../../finance/models/FintGen'
+import { getGenMutilatorsWithAmount } from '../../finance/models/FintGen/getGenMutilatorsWithAmount'
+import { toFintGenTuple } from '../../finance/models/FintGen/toFintGenTuple'
 import { Mutator } from '../../generic/models/Mutator'
 import { Arithmetic } from '../../utils/arithmetic'
 import { getAssert } from '../../utils/arithmetic/getAssert'
-import { getDeltas } from '../../utils/arithmetic/getDeltas'
 import { halve as $halve } from '../../utils/arithmetic/halve'
-import { sumAmounts } from '../../utils/arithmetic/sum'
 import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
 import { inner, input, output } from '../../utils/debug'
-import { ensureFind, getFinder } from '../../utils/ensure'
+import { ensureByIndex, ensureFind, getFinder } from '../../utils/ensure'
 import { AssertionFailedError } from '../../utils/error'
-import { isEqualBy } from '../../utils/lodash'
 import { get__filename } from '../../utils/node'
 import { meldWithLast } from '../../utils/remeda/meldWithLast'
 import { toBoundedArray } from './arbitraries/toBoundedArray'
 import { toQuotients } from './arbitraries/toQuotients'
+import { getAmount, getBalance, getTotalSupply, grabBalance } from './helpers'
+import { validateFairpools } from './validateFairpool'
+
+type N = bigint
 
 export type Address = string
 
@@ -24,29 +27,63 @@ export type Asset = string
 
 export type Amount = bigint
 
-type N = Amount
+export type Fint = FintGen<Address, Asset, Amount>
 
-export type Reck = ReckGen<Address, Asset, Amount>
-
-export type ReckTuple = ReckGenTuple<Address, Asset, Amount>
+export type FintTuple = FintGenTuple<Address, Asset, Amount>
 
 export type Balance = BalanceGen<Address, Amount>
 
 export type BalanceTuple = BalanceGenTuple<Address, Amount>
 
-interface Fairpool {
+export type History<T> = T[]
+
+export interface Beneficiary {
+  address: Address
+  share: N
+}
+
+export interface PrePriceParams {
+  baseLimit: N
+  quoteOffsetMultiplierProposed: N
+}
+
+export interface PriceParams {
+  baseLimit: Amount,
+  quoteOffset: Amount
+}
+
+export interface DistributionParams {
+  royalties: N
+  earnings: N
+  fees: N
+}
+
+export interface Fairpool extends PriceParams, DistributionParams {
+  address: Address
+  balances: Balance[] // in base currency // TODO: Validate that balance addresses are unique
+  tallies: Balance[] // in quote currency
+  quoteSupply: Amount
+  scale: N
+  beneficiaries: Beneficiary[]
+  owner: Address
+  operator: Address
+  holdersPerDistributionMax: N
+}
+
+export interface Blockchain {
   balances: Balance[]
 }
 
 export interface State {
+  blockchain: Blockchain
   fairpools: Fairpool[]
 }
 
-export type Action = Mutator<Reck[]>
+export type Action = Mutator<State>
 
 export interface BalancesBQ {
-  base: Reck
-  quote: Reck
+  base: Fint
+  quote: Fint
 }
 
 export interface AmountsBQ {
@@ -54,21 +91,17 @@ export interface AmountsBQ {
   quote: Amount
 }
 
-export interface Context extends Params {
+export interface Context extends PriceParams {
   arithmetic: Arithmetic<Amount> // TODO: remove backwards compatibility
   baseAsset: Asset
   quoteAsset: Asset
-}
-
-export interface Params {
-  baseLimit: Amount,
-  quoteOffset: Amount
 }
 
 const arithmetic = BigIntArithmetic
 const assert = getAssert(arithmetic)
 const halve = $halve(arithmetic)
 const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
+const { addB, subB, mulB, divB, sendB } = getGenMutilatorsWithAmount(arithmetic)
 
 export class BaseDeltaMustBeGreaterThanZero extends AssertionFailedError<{ baseDelta: Amount }> {}
 
@@ -76,13 +109,17 @@ export class QuoteDeltaMustBeGreaterThanZero extends AssertionFailedError<{ quot
 
 const __filename = get__filename(import.meta.url)
 
-export const toContextFun = <Rest>(f: (baseLimit: N, quoteOffset: N) => Rest) => (context: Context) => f(context.baseLimit, context.quoteOffset)
+export const getFairpoolFun = <Rest>(f: (baseLimit: N, quoteOffset: N) => Rest) => (fairpool: Fairpool) => f(fairpool.baseLimit, fairpool.quoteOffset)
 
 export const getBaseSupply = (baseLimit: N, quoteOffset: N) => (quoteSupply: N) => {
   const numerator = mul(baseLimit, quoteSupply)
   const denominator = add(quoteOffset, quoteSupply)
-  return div(numerator, denominator)
+  const baseSupply = div(numerator, denominator)
+  assert.lt(baseSupply, baseLimit, 'baseSupply', 'baseLimit')
+  return baseSupply
 }
+
+export const getBaseSupplyF = getFairpoolFun(getBaseSupply)
 
 export const getQuoteSupply = (baseLimit: N, quoteOffset: N) => (baseSupply: N) => {
   assert.lt(baseSupply, baseLimit, 'baseSupply', 'baseLimit')
@@ -91,7 +128,22 @@ export const getQuoteSupply = (baseLimit: N, quoteOffset: N) => (baseSupply: N) 
   return div(numerator, denominator)
 }
 
-export const getQuoteSupplyC = toContextFun(getQuoteSupply)
+export const getQuoteSupplyF = getFairpoolFun(getQuoteSupply)
+
+/**
+ * For illustration purposes only
+ * This is a special formula that works only for "derived quoteSupply"
+ * "derived quoteSupply" is quoteSupply that was returned from a call to getQuoteSupply
+ */
+export const getBaseSupplyForDerivedQuoteSupply = (baseLimit: N, quoteOffset: N) => (quoteSupply: N) => {
+  if (quoteSupply == 0n) return 0n
+  const quoteSupplyNext = quoteSupply + 1n // derived quoteSupply is at least 1n less than quoteSupply that will result in a symmetric baseSupply
+  const numerator = mul(baseLimit, quoteSupplyNext)
+  const denominator = add(quoteOffset, quoteSupplyNext)
+  const baseSupply = div(numerator, denominator)
+  assert.lt(baseSupply, baseLimit, 'baseSupply', 'baseLimit')
+  return baseSupply
+}
 
 export const getBaseDelta = (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (quoteDeltaProposed: N) => {
   const quoteSupplyNew = add(quoteSupplyCurrent, quoteDeltaProposed)
@@ -112,25 +164,30 @@ export const getQuoteSupplyMax = (baseLimit: N, quoteOffset: N) => {
   return mul(quoteOffset, sub(baseLimit, one))
 }
 
-export const getQuoteSupplyMaxC = toContextFun(getQuoteSupplyMax)
+export const getQuoteSupplyMaxF = getFairpoolFun(getQuoteSupplyMax)
 
 export const getQuoteSupplyMaxByDefinition = (baseLimit: N, quoteOffset: N) => {
   return getQuoteSupply(baseLimit, quoteOffset)(sub(one)(baseLimit))
 }
 
-export const getQuoteSupplyMaxByDefinitionC = toContextFun(getQuoteSupplyMaxByDefinition)
+export const getQuoteSupplyMaxByDefinitionF = getFairpoolFun(getQuoteSupplyMaxByDefinition)
 
 export const getQuoteSupplyFor = (baseLimit: N, quoteOffset: N) => (baseSupply: N) => {
-  const baseSupplyNext = add(one)(baseSupply)
-  const quoteSupplyNext = getQuoteSupply(baseLimit, quoteOffset)(baseSupplyNext)
-  return sub(one)(quoteSupplyNext)
+  const toQuoteSupply = getQuoteSupply(baseLimit, quoteOffset)
+  const toBaseLimit = getBaseSupply(baseLimit, quoteOffset)
+  const quoteSupply = toQuoteSupply(baseSupply)
+  if (toBaseLimit(quoteSupply) === baseSupply) {
+    return quoteSupply
+  } else {
+    return quoteSupply + 1n
+  }
 }
 
-export const getQuoteSupplyForC = toContextFun(getQuoteSupplyFor)
+export const getQuoteSupplyForF = getFairpoolFun(getQuoteSupplyFor)
 
 export const getQuoteDeltaMin = (baseLimit: N, quoteOffset: N) => getQuoteSupplyFor(baseLimit, quoteOffset)(arithmetic.one)
 
-export const getQuoteDeltaMinC = toContextFun(getQuoteDeltaMin)
+export const getQuoteDeltaMinF = getFairpoolFun(getQuoteDeltaMin)
 
 // /**
 //  * TODO: Rewrite to (quoteDeltaDefault: N) => (quoteDeltaMultipliers: N[])
@@ -148,6 +205,7 @@ export const getQuoteDeltaMinC = toContextFun(getQuoteDeltaMin)
  */
 export const getBuyDeltas = (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (quoteDeltaProposed: N) => {
   input(__filename, getBuyDeltas, { baseSupplyCurrent, quoteSupplyCurrent, quoteDeltaProposed })
+  assert.gte(quoteDeltaProposed, zero, 'quoteDeltaProposed', 'zero')
   const quoteSupplyProposed = add(quoteSupplyCurrent, quoteDeltaProposed)
   const baseSupplyNew = getBaseSupply(baseLimit, quoteOffset)(quoteSupplyProposed)
   const quoteSupplyNew = getQuoteSupply(baseLimit, quoteOffset)(baseSupplyNew)
@@ -176,43 +234,11 @@ export const getSellDeltas = (baseLimit: N, quoteOffset: N) => (baseSupplyCurren
   return output(__filename, getSellDeltas, { baseDelta, quoteDelta })
 }
 
-export const byAssetWallet = (asset: Asset, wallet: Address) => (balance: Reck) => {
+export const byAssetWallet = (asset: Asset, wallet: Address) => (balance: Fint) => {
   return balance.asset === asset && balance.wallet === wallet
 }
 
-export const getBalancesBQ = (baseAsset: Asset, quoteAsset: Asset) => (wallet: Address) => (balances: Reck[]) => {
-  const base = getBalance(baseAsset)(wallet)(balances)
-  const quote = getBalance(quoteAsset)(wallet)(balances)
-  return { base, quote }
-}
-
-export const getAmountsBQ = (baseAsset: Asset, quoteAsset: Asset) => (wallet: Address) => (balances: Reck[]) => {
-  const balancesBQ = getBalancesBQ(baseAsset, quoteAsset)(wallet)(balances)
-  return { base: balancesBQ.base.amount, quote: balancesBQ.quote.amount }
-}
-
-export const getBalance = (asset: Asset) => (wallet: Address) => (balances: Reck[]) => {
-  return ensureFind(balances, byAssetWallet(asset, wallet))
-}
-
-export const getAmount = (asset: Asset) => (wallet: Address) => (balances: Reck[]) => {
-  return getBalance(asset)(wallet)(balances).amount
-}
-
-const getBalanceMutators = () => {
-  return {
-    addB: (delta: N) => (reck: Reck) => { reck.amount = add(reck.amount, delta) },
-    subB: (delta: N) => (reck: Reck) => { reck.amount = sub(reck.amount, delta) },
-    mulB: (coefficient: N) => (reck: Reck) => { reck.amount = mul(reck.amount, coefficient) },
-    divB: (coefficient: N) => (reck: Reck) => { reck.amount = div(reck.amount, coefficient) },
-    sendB: (delta: N) => (from: Reck, to: Reck) => {
-      from.amount = sub(from.amount, delta)
-      to.amount = add(to.amount, delta)
-    },
-  }
-}
-
-export const getTotalSupply = (asset: Asset) => (recks: Reck[]) => sumAmounts(arithmetic)(recks.filter(b => b.asset === asset))
+// export const getTotalSupplyR = (asset: Asset) => (recks: Fint[]) => getTotalSupply(recks.filter(b => b.asset === asset))
 
 /**
  * @deprecated
@@ -226,11 +252,6 @@ export const getQuoteSupplyAcceptableMax = (baseLimit: N, quoteOffset: N) => {
     sub(mul(two)(quoteOffset), one)
   ))
 }
-
-/**
- * @deprecated
- */
-export const getQuoteSupplyAcceptableMaxC = toContextFun(getQuoteSupplyAcceptableMax)
 
 /**
  * initialPrice = quoteOffset / baseLimit
@@ -247,7 +268,7 @@ export const getBaseSupplySuperlinearMin = (baseLimit: N, quoteOffset: N) => {
   return div(baseLimit, denominator)
 }
 
-export const getBaseSupplySuperlinearMinC = toContextFun(getBaseSupplySuperlinearMin)
+export const getBaseSupplySuperlinearMinF = getFairpoolFun(getBaseSupplySuperlinearMin)
 
 export const getInitialPrice = (baseLimit: N, quoteOffset: N) => div(quoteOffset, baseLimit)
 
@@ -276,7 +297,7 @@ export const getQuoteDeltasFromBaseDeltas = (baseLimit: N, quoteOffset: N) => (b
   return baseSupplies.map(getQuoteSupplyFor(baseLimit, quoteOffset))
 }
 
-export const getQuoteDeltasFromBaseDeltasC = toContextFun(getQuoteDeltasFromBaseDeltas)
+export const getQuoteDeltasFromBaseDeltasF = getFairpoolFun(getQuoteDeltasFromBaseDeltas)
 
 export const getQuoteDeltasFromBaseDeltaNumeratorsSuperlinearSafe = (baseLimit: N, quoteOffset: N) => createPipe(
   getBaseDeltasFromBaseDeltaNumeratorsSuperlinearSafe(baseLimit, quoteOffset),
@@ -288,101 +309,103 @@ export const getQuoteDeltasFromBaseDeltaNumeratorsFullRange = (baseLimit: N, quo
   getQuoteDeltasFromBaseDeltas(baseLimit, quoteOffset)
 )
 
-export const getQuoteDeltasFromBaseDeltaNumeratorsFullRangeC = toContextFun(getQuoteDeltasFromBaseDeltaNumeratorsFullRange)
+export const getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF = getFairpoolFun(getQuoteDeltasFromBaseDeltaNumeratorsFullRange)
 
-/**
- * Currently this function is called in every action. This is suboptimal, must be refactored (requires moving baseLimit and quoteOffset to State)
- */
-export const validateContext = (context: Context) => {
-  const { arithmetic, baseAsset, quoteAsset, baseLimit, quoteOffset } = context
-  const quoteOffsetCalculated = pipe(quoteOffset, div(baseLimit), mul(baseLimit))
-  assert.gt(baseLimit, zero, 'baseLimit', 'zero')
-  assert.gt(quoteOffset, zero, 'quoteOffset', 'zero')
-  assert.lt(baseLimit, quoteOffset, 'baseLimit', 'quoteOffset', 'Required for lt(baseDelta, quoteDelta)')
-  assert.eq(quoteOffsetCalculated, quoteOffset, 'quoteOffsetCalculated', 'quoteOffset', 'Required for quoteOffset = k * baseLimit')
-  return context
+export const validateState = (state: State): State => {
+  const { fairpools, blockchain } = state
+  return {
+    fairpools: validateFairpools(blockchain.balances)(fairpools),
+    blockchain: validateBlockchain(blockchain),
+  }
 }
 
-export const validateBalances = (context: Context) => (contract: Address) => (balances: Reck[]) => {
-  const { arithmetic, baseAsset, quoteAsset, baseLimit, quoteOffset } = context
-  const baseSupplyActual = getTotalSupply(baseAsset)(balances)
-  const quoteSupplyActual = getAmount(quoteAsset)(contract)(balances)
-  const baseSupplyExpected = getBaseSupply(baseLimit, quoteOffset)(quoteSupplyActual)
-  const quoteSupplyExpected = getQuoteSupply(baseLimit, quoteOffset)(baseSupplyActual)
-  // inter(__filename, validateBalances, { baseSupplyActual, baseSupplyExpected })
-  // inter(__filename, validateBalances, { quoteSupplyActual, quoteSupplyExpected })
-  assert.gte(baseSupplyActual, baseSupplyExpected, 'baseSupplyActual', 'baseSupplyExpected', 'baseSupply* must be gte, not eq, because they are calculated imprecisely from quoteSupply')
-  assert.eq(quoteSupplyActual, quoteSupplyExpected, 'quoteSupplyActual', 'quoteSupplyExpected', 'quoteSupply* must be eq, not lte, because they are calculated precisely from baseSupply')
-  assert.by(isEqualBy(eq(zero)), 'isEqualBy(eq(zero))')(baseSupplyActual, quoteSupplyActual, 'baseSupplyActual', 'quoteSupplyActual') // isZero(baseSupplyActual) === isZero(quoteSupplyActual)
-  return balances
+export const validateBlockchain = (blockchain: Blockchain) => {
+  const { balances } = blockchain
+  return {
+    balances /* Not throwing errors for negative balances because otherwise it would be very difficult to generate arbitrary values in tests */,
+  }
 }
 
-export const buy = (context: Context) => (contract: Address, sender: Address, quoteDeltaProposed: N) => ($balances: Reck[]) => {
+export const getStateLocal = (contract: Address) => ({ blockchain, fairpools }: State) => ({
+  fairpool: ensureFind(fairpools, f => f.address === contract),
+  blockchain,
+})
+
+// export const getBalancesLocal = (contract: Address, sender: Address) => (fairpool: Fairpool, blockchain: Blockchain) => {
+//   return {
+//     [contract]: {
+//       base: getBalance(contract)(fairpool.balances),
+//       quote: getBalance(contract)(blockchain.balances),
+//     },
+//     [sender]: {
+//       base: getBalance(sender)(fairpool.balances),
+//       quote: getBalance(sender)(blockchain.balances),
+//     },
+//   }
+// }
+
+export const getBalancesLocal = (addresses: Address[]) => (fairpool: Fairpool, blockchain: Blockchain) => {
+  return Object.fromEntries<{ base: Balance, quote: Balance }>(addresses.map(address => [address, {
+    base: getBalance(address)(fairpool.balances),
+    quote: getBalance(address)(blockchain.balances),
+  }]))
+}
+
+export const buy = (contract: Address, sender: Address, quoteDeltaProposed: Amount) => asSafeMutator((state: State) => {
   input(__filename, buy, { action: 'buy', contract, sender, quoteDeltaProposed })
-  const { arithmetic, baseAsset, quoteAsset, baseLimit, quoteOffset } = validateContext(context)
-  const { addB, subB, mulB, divB, sendB } = getBalanceMutators()
-  const balances = clone($balances)
-  const getBalancesLocal = getBalancesBQ(baseAsset, quoteAsset)
-  const balancesContract = getBalancesLocal(contract)(balances)
-  const balancesSender = getBalancesLocal(sender)(balances)
-  const baseSupplyCurrent = getTotalSupply(baseAsset)(balances)
-  const quoteSupplyCurrent = balancesContract.quote.amount
+  const { fairpool, blockchain } = getStateLocal(contract)(state)
+  const { baseLimit, quoteOffset } = fairpool
+  // const balancesContract = getBalancesLocal(contract)(balances)
+  // const balancesSender = getBalancesLocal(sender)(balances)
+  const baseSupplyCurrent = getTotalSupply(fairpool.balances)
+  const quoteSupplyCurrent = fairpool.quoteSupply
   const { baseDelta, quoteDelta } = getBuyDeltas(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(quoteDeltaProposed)
-  sendB(quoteDelta)(balancesSender.quote, balancesContract.quote)
-  addB(baseDelta)(balancesSender.base)
-  return validateBalances(context)(contract)(balances)
-}
+  const balanceSenderBase = grabBalance(sender)(fairpool.balances)
+  const balanceSenderQuote = grabBalance(sender)(blockchain.balances)
+  const balanceContractQuote = grabBalance(contract)(blockchain.balances)
+  fairpool.quoteSupply += quoteDelta
+  sendB(quoteDelta)(balanceSenderQuote, balanceContractQuote)
+  addB(baseDelta)(balanceSenderBase)
+  return validateState(state)
+})
 
-export const sell = (context: Context) => (contract: Address, sender: Address, baseDeltaProposed: N) => ($balances: Reck[]) => {
+export const sell = (contract: Address, sender: Address, baseDeltaProposed: N) => asSafeMutator((state: State) => {
   input(__filename, sell, { action: 'sell', contract, sender, baseDeltaProposed })
-  const { arithmetic, baseAsset, quoteAsset, baseLimit, quoteOffset } = validateContext(context)
-  const { addB, subB, mulB, divB, sendB } = getBalanceMutators()
-  const balances = clone($balances)
-  const getBalancesLocal = getBalancesBQ(baseAsset, quoteAsset)
-  const balancesContract = getBalancesLocal(contract)(balances)
-  const balancesSender = getBalancesLocal(sender)(balances)
-  const baseSupplyCurrent = getTotalSupply(baseAsset)(balances)
-  const quoteSupplyCurrent = balancesContract.quote.amount
+  const { fairpool, blockchain } = getStateLocal(contract)(state)
+  const { baseLimit, quoteOffset } = fairpool
+  const baseSupplyCurrent = getTotalSupply(fairpool.balances)
+  const quoteSupplyCurrent = fairpool.quoteSupply
   const { baseDelta, quoteDelta } = getSellDeltas(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(baseDeltaProposed)
-  sendB(quoteDelta)(balancesContract.quote, balancesSender.quote)
-  subB(baseDelta)(balancesSender.base)
-  return validateBalances(context)(contract)(balances)
+  const balanceSenderBase = grabBalance(sender)(fairpool.balances)
+  const balanceSenderQuote = grabBalance(sender)(blockchain.balances)
+  const balanceContractQuote = grabBalance(contract)(blockchain.balances)
+  fairpool.quoteSupply -= quoteDelta
+  sendB(quoteDelta)(balanceContractQuote, balanceSenderQuote)
+  subB(baseDelta)(balanceSenderBase)
+  return validateState(state)
+})
+
+export const selloff = (contract: Address, sender: Address) => asSafeMutator((state: State) => {
+  const { fairpool, blockchain } = getStateLocal(contract)(state)
+  const baseDelta = getAmount(sender)(fairpool.balances)
+  return sell(contract, sender, baseDelta)(state)
+})
+
+export const logState = (state: State) => {
+  console.dir(state, { depth: null })
+  return state
 }
 
-export const selloff = (context: Context) => (contract: Address, sender: Address) => ($balances: Reck[]) => {
-  const { baseAsset, quoteAsset } = validateContext(context)
-  const baseDelta = getBalancesBQ(baseAsset, quoteAsset)(sender)($balances).base.amount
-  // const amountQuoteSender = getAmount(balances)(quoteAsset)(sender)
-  return sell(context)(contract, sender, baseDelta)($balances)
-}
+export const getFairpool = (state: State, index = 0) => ensureByIndex(state.fairpools, index)
 
-export const getBalanceRendered = (balance: Reck) => toReckGenTuple(balance).map(v => v.toString())
+export const getBalancesBase = (state: State, index = 0) => ensureByIndex(state.fairpools, index).balances
 
-export const getBalancesRendered = map(getBalanceRendered)
+export const getBalancesQuote = (state: State) => state.blockchain.balances
 
-export const getBalancesEvolution = (asset: string, sender: string) => (balancesEvolution: Reck[][]) => balancesEvolution.map(getFinder(byAssetWallet(asset, sender)))
+export const getFintRendered = (fint: Fint) => toFintGenTuple(fint).map(v => v.toString())
 
-export const getStats = (context: Context) => (scale: N) => (start: number, end: number, multiplier: number) => {
-  const { arithmetic, baseAsset, quoteAsset, baseLimit, quoteOffset } = context
-  const upscale = mul(scale)
-  const baseLimitScaled = upscale(baseLimit)
-  const quoteOffsetScaled = upscale(quoteOffset)
-  const quoteSupplyAcceptableMax = getQuoteSupplyAcceptableMax(baseLimitScaled, quoteOffsetScaled)
-  return range(start, end).map(n => {
-    const quoteSupply = upscale(num(n * multiplier))
-    const baseSupplyCalc = getBaseSupply(baseLimitScaled, quoteOffsetScaled)(quoteSupply)
-    const quoteSupplyCalc = getQuoteSupply(baseLimitScaled, quoteOffsetScaled)(baseSupplyCalc)
-    const diff = sub(quoteSupply, quoteSupplyCalc)
-    const isOptimal = diff === 0n && quoteSupply !== 0n
-    const isAcceptableMax = eq(quoteSupply, quoteSupplyAcceptableMax)
-    return { baseSupplyCalc, quoteSupply, quoteSupplyCalc, diff, isOptimal, isAcceptableMax }
-  })
-}
+export const getFintsRendered = map(getFintRendered)
 
-export const getPrices = (baseLimit: N, quoteOffset: N) => (quoteSupplyFrom$: number, quoteSupplyTo$: number) => {
-  const quoteSupplyArr = range(quoteSupplyFrom$, quoteSupplyTo$).map(arithmetic.num)
-  const baseSupplyArr = quoteSupplyArr.map(getBaseSupply(baseLimit, quoteOffset))
-  return getDeltas(arithmetic)(baseSupplyArr)
-}
+export const getFintsHistory = (asset: string, sender: string) => (history: History<Fint[]>) => history.map(getFinder(byAssetWallet(asset, sender)))
 
-export const getPricesC = toContextFun(getPrices)
+export const getPricingParamsFromFairpool = pick<Fairpool, keyof Fairpool>(['baseLimit', 'quoteOffset'])
