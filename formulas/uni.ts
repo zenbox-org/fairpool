@@ -16,7 +16,7 @@ import { get__filename } from '../../utils/node'
 import { meldWithLast } from '../../utils/remeda/meldWithLast'
 import { toBoundedArray } from './arbitraries/toBoundedArray'
 import { toQuotients } from './arbitraries/toQuotients'
-import { getAmount, getBalance, getTotalSupply, grabBalance } from './helpers'
+import { getAmount, getBalanceD, getTotalSupply, grabBalance } from './helpers'
 import { validateFairpools } from './validateFairpool'
 
 type N = bigint
@@ -281,7 +281,7 @@ export const getBaseDeltasFromNumerators = (baseLimit: N, quoteOffset: N) => (ba
 export const getBaseDeltasFromBaseDeltaNumeratorsSuperlinearSafe = (baseLimit: N, quoteOffset: N) => {
   const baseSupplySuperlinearMin = getBaseSupplySuperlinearMin(baseLimit, quoteOffset)
   const baseDeltaMin = max(one, baseSupplySuperlinearMin) // yes, max(), because baseDeltaMin must be gte one and gte baseSupplySuperlinearMin, but baseSupplySuperlinearMin may be eq zero
-  const baseSupplyMax = halve(baseLimit)
+  const baseSupplyMax = sub(one)(baseLimit)
   return getBaseDeltasFromNumerators(baseLimit, quoteOffset)(baseDeltaMin, baseSupplyMax)
 }
 
@@ -344,10 +344,10 @@ export const getStateLocal = (contract: Address) => ({ blockchain, fairpools }: 
 //   }
 // }
 
-export const getBalancesLocal = (addresses: Address[]) => (fairpool: Fairpool, blockchain: Blockchain) => {
+export const getBalancesLocalD = (addresses: Address[]) => (fairpool: Fairpool, blockchain: Blockchain) => {
   return Object.fromEntries<{ base: Balance, quote: Balance }>(addresses.map(address => [address, {
-    base: getBalance(address)(fairpool.balances),
-    quote: getBalance(address)(blockchain.balances),
+    base: getBalanceD(address)(fairpool.balances),
+    quote: getBalanceD(address)(blockchain.balances),
   }]))
 }
 
@@ -390,11 +390,6 @@ export const selloff = (contract: Address, sender: Address) => asSafeMutator((st
   const baseDelta = getAmount(sender)(fairpool.balances)
   return sell(contract, sender, baseDelta)(state)
 })
-
-export const logState = (state: State) => {
-  console.dir(state, { depth: null })
-  return state
-}
 
 export const getFairpool = (state: State, index = 0) => ensureByIndex(state.fairpools, index)
 

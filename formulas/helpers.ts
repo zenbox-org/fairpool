@@ -61,3 +61,8 @@ export const getTotalSupplyR = (asset: Asset) => (fints: Fint[]) => pipe(fints.f
 export const getTotalSupplyF = (fairpool: Fairpool) => getTotalSupply(fairpool.balances)
 
 export const getBaseSupplyActual = getTotalSupplyF
+
+export const logState = (state: State) => {
+  console.dir(state, { depth: null })
+  return state
+}

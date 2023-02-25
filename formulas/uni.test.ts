@@ -1,15 +1,15 @@
 import { test } from '@jest/globals'
 import { array, bigInt, constant, constantFrom, integer, nat, record, tuple } from 'fast-check'
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
-import { clone, createPipe, last, map, pipe, sort, times, zip } from 'remeda'
+import { clone, createPipe, last, map, sort, times, zip } from 'remeda'
 import { uint256Max } from '../../bn/constants'
 import { MutatorV } from '../../generic/models/Mutator'
 import { clamp as $clamp, clampIn as $clampIn } from '../../utils/arithmetic/clamp'
 import { getAssert } from '../../utils/arithmetic/getAssert'
-import { getDeltas } from '../../utils/arithmetic/getDeltas'
+import { getDeltas as $getDeltas } from '../../utils/arithmetic/getDeltas'
 import { getShare as $getShare } from '../../utils/arithmetic/getShare'
 import { halve as $halve } from '../../utils/arithmetic/halve'
-import { isDescending } from '../../utils/arithmetic/isDescending'
+import { isDescending as $isDescending } from '../../utils/arithmetic/isDescending'
 import { sum } from '../../utils/arithmetic/sum'
 import { ensureNonEmptyArray, NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
 import { assertBy, assertEq } from '../../utils/assert'
@@ -30,13 +30,11 @@ import { toQuotients as $toQuotients } from './arbitraries/toQuotients'
 import { assertBalanceDiffs } from './assertBalanceDiffs'
 import { cleanState } from './clean'
 import { priceParamMax, priceParamMin, quoteOffsetMin, quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin, scaleFixed } from './constants'
-import { getAmount, getAmountsBQ, getBalanceD, getBalancesBQ } from './helpers'
-import { Action, Address, Balance, BalanceTuple, Beneficiary, Blockchain, buy, Context, DistributionParams, Fairpool, getBalancesBase, getBalancesLocal, getBalancesQuote, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltaMinF, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltaNumeratorsSuperlinearSafe, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, logState, PrePriceParams, PriceParams, selloff, State } from './uni'
+import { getAmountD, getAmountsBQ, getBalanceD, getBalancesBQ, logState } from './helpers'
+import { Action, Address, Balance, BalanceTuple, Beneficiary, Blockchain, buy, Context, DistributionParams, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltaMinF, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, PriceParams, selloff, State } from './uni'
 import { validateFairpool } from './validateFairpool'
 import { validatePricingParams } from './validatePricingParams'
 import { fairpoolZero } from './zero'
-
-type N = bigint
 
 const arithmetic = BigIntArithmetic
 const { zero, one, num, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
@@ -48,8 +46,8 @@ const toBoundedArray = $toBoundedArray(arithmetic)
 const fromNumeratorsToValues = $fromNumeratorsToValues(arithmetic)
 const clamp = $clamp(arithmetic)
 const clampIn = $clampIn(arithmetic)
-const getDeltasA = getDeltas(arithmetic)
-const isDescendingA = isDescending(arithmetic)
+const getDeltas = $getDeltas(arithmetic)
+const isDescending = $isDescending(arithmetic)
 const users = ['alice', 'bob', 'sam', 'ted']
 const addresses = ['contract', ...users]
 const assets = ['base', 'quote']
@@ -77,20 +75,10 @@ const quoteOffsetMultiplierConstraints = { min: quoteOffsetMultiplierMin }
 const genericMultiplierConstraints = { min: 1n, max: uint256Max.toBigInt() /* should actually be smaller, but we don't know in advance */ }
 const increasingMultiplierConstraints = { ...genericMultiplierConstraints, min: 2n }
 
-const paramsInitial = validatePricingParams({ baseLimit: num(20000), quoteOffset: num(100000) })
-const contextInitial = getContext(paramsInitial)
-// const baseLimit = baseLimitConstraints.min
-// const quoteOffset = div(baseLimit, ratio)
-// const getContext = (params: )= {
-//   arithmetic,
-//   baseAsset: base,
-//   quoteAsset: quote,
-// }
-// const quoteDelta = num(100)
-const balancesInitial: Balance[] = []
-const getShareScaledInitial = getShare(scaleFixed)
-const getShareScaledInitialPips = getShareScaledInitial(num(10000))
-const fairpoolInitial: Fairpool = validateFairpool(balancesInitial)({
+const balancesDefault: Balance[] = []
+const getShareScaledDefault = getShare(scaleFixed)
+const getShareScaledDefaultPips = getShareScaledDefault(num(10000))
+const fairpoolDefault: Fairpool = validateFairpool(balancesDefault)({
   ...fairpoolZero,
   quoteOffset: 2n * quoteOffsetMin,
   address: contract,
@@ -98,19 +86,19 @@ const fairpoolInitial: Fairpool = validateFairpool(balancesInitial)({
   beneficiaries: [{ address: sam, share: scaleFixed }],
   owner: sam,
   operator: ted,
-  royalties: getShareScaledInitialPips(num(2000)),
-  earnings: getShareScaledInitialPips(num(7500)),
-  fees: getShareScaledInitialPips(num(2500)),
+  royalties: getShareScaledDefaultPips(num(2000)),
+  earnings: getShareScaledDefaultPips(num(7500)),
+  fees: getShareScaledDefaultPips(num(2500)),
   holdersPerDistributionMax: num(256),
 })
-const blockchainInitial: Blockchain = {
-  balances: balancesInitial,
+const blockchainDefault: Blockchain = {
+  balances: balancesDefault,
 }
-const stateInitial: State = {
-  blockchain: blockchainInitial,
-  fairpools: [fairpoolInitial],
+const stateDefault: State = {
+  blockchain: blockchainDefault,
+  fairpools: [fairpoolDefault],
 }
-const quoteDeltaInitial = getQuoteDeltaMinF(fairpoolInitial)
+const quoteDeltaDefault = getQuoteDeltaMinF(fairpoolDefault)
 
 // const baseLimitArb = bigInt(baseLimitConstraints)
 // const quoteOffsetMultiplierProposedArb = bigInt(quoteOffsetMultiplierConstraints)
@@ -156,12 +144,12 @@ const fairpoolArb = (users: Address[]) => record({
 }))
 const getStateArb = (users: Address[]) => record<State>({
   fairpools: array(fairpoolArb(users), { minLength: 1, maxLength: 1 }),
-  blockchain: constant(blockchainInitial),
+  blockchain: constant(blockchainDefault),
 })
 const stateArb = getStateArb(users)
 const increasingMultiplierArb = bigInt(increasingMultiplierConstraints)
 
-const getBalancesStats = (state: State) => getBalancesLocal([alice, bob])(getFairpool(state), state.blockchain)
+const getBalancesStats = (state: State) => getBalancesLocalD([alice, bob])(getFairpool(state), state.blockchain)
 const dbgBalancesStatsAction = (state: State) => {
   const stats = getBalancesStats(state)
   dbgS(__filename, 'dbgBalancesStats', 'inter', stats)
@@ -186,12 +174,12 @@ const run = <Val, Args extends unknown[]>(mutators: MutatorV<Val, Args>[], ...ar
   return results
 }
 
-const getProfitFromActions = (seller: Address) => (actions: Action[]) => {
+const getProfitFromActions = (seller: Address) => (actions: Action[]) => (stateInitial: State) => {
   const history = run(actions)(stateInitial)
   const stateFinal = last(history)
-  const getAmountLocal = getAmount(seller)
-  const amountInitial = getAmountLocal(stateInitial.blockchain.balances)
-  const amountFinal = getAmountLocal(stateFinal.blockchain.balances)
+  const getAmountLocalD = getAmountD(seller)
+  const amountInitial = getAmountLocalD(stateInitial.blockchain.balances)
+  const amountFinal = getAmountLocalD(stateFinal.blockchain.balances)
   return sub(amountFinal, amountInitial)
 }
 const getProfitFromTuples = (tuples: NonEmptyArray<BalanceTuple>) => {
@@ -219,7 +207,7 @@ const getTuplesFromWalletsAndNumerators = (fairpool: Fairpool) => (wallets: Addr
   return zip(wallets, quoteDeltas)
 }
 
-testFun(async function expectGetQuoteSupplyToBeSemiInvertible() {
+testFun(async function assertGetQuoteSupplyToBeSemiInvertible() {
   return assertPRD(priceParamsArb, uint256Arb, async (params, baseSupplyProposed) => {
     const { baseLimit, quoteOffset } = validatePricingParams(params)
     const baseSupply = clamp(0n, baseLimit)(baseSupplyProposed)
@@ -231,24 +219,24 @@ testFun(async function expectGetQuoteSupplyToBeSemiInvertible() {
   })
 })
 
-testFun(async function expectGetBaseSupplyToBeSemiInvertible() {
+testFun(async function assertGetBaseSupplyToBeSemiInvertible() {
   return assertPRD(priceParamsArb, uint256Arb, async (params, quoteSupply) => {
     const { baseLimit, quoteOffset } = validatePricingParams(params)
     // NOTE: quoteSupply doesn't need to be clamped
-    input(__filename, expectGetBaseSupplyToBeSemiInvertible, params)
+    input(__filename, assertGetBaseSupplyToBeSemiInvertible, params)
     const baseSupplyCalculated = getBaseSupply(baseLimit, quoteOffset)(quoteSupply)
     const quoteSupplyCalculated = getQuoteSupply(baseLimit, quoteOffset)(baseSupplyCalculated)
-    inner(__filename, expectGetBaseSupplyToBeSemiInvertible, { quoteSupply, baseSupplyCalculated, quoteSupplyCalculated })
+    inner(__filename, assertGetBaseSupplyToBeSemiInvertible, { quoteSupply, baseSupplyCalculated, quoteSupplyCalculated })
     expect(quoteSupplyCalculated).toBeLessThanOrEqual(quoteSupply)
   })
 })
 
-testFun(async function expectStaticScenarioToSucceed() {
-  const delta = quoteDeltaInitial
+testFun(async function assertStaticScenarioToSucceed() {
+  const delta = quoteDeltaDefault
   const multiplier = num(1000)
   const base = getBalancesBase
   const quote = getBalancesQuote
-  const check = assertBalanceDiffs(stateInitial)
+  const check = assertBalanceDiffs(stateDefault)
   run([
     buy(contract, alice, delta),
     check([
@@ -291,7 +279,7 @@ testFun(async function expectStaticScenarioToSucceed() {
       [bob, base, num(0)],
       [bob, quote, num(-11)],
     ]),
-  ])(stateInitial)
+  ])(stateDefault)
 })
 
 test(getQuoteSupplyMax.name, async () => {
@@ -301,7 +289,7 @@ test(getQuoteSupplyMax.name, async () => {
   })
 })
 
-test('getQuoteSupplyFor', async () => {
+test(getQuoteSupplyFor.name, async () => {
   return assertPRD(priceParamsArb, uint256Arb, async (params, baseSupplyProposed) => {
     const { baseLimit, quoteOffset } = params
     const baseSupply = clamp(0n, baseLimit)(baseSupplyProposed)
@@ -311,20 +299,7 @@ test('getQuoteSupplyFor', async () => {
   })
 })
 
-// test.skip(getQuoteSupplyFor.name, async () => {
-//   const baseSupplyArb = bigInt({ min: 1n, max: uint256Max.toBigInt() })
-//   return assertPRD(stateArb, baseSupplyArb, async (state, baseSupplyExpectedIn) => {
-//     const fairpool = getFairpool(state)
-//     const baseSupplyExpected = clamp(one, fairpool.baseLimit)(baseSupplyExpectedIn)
-//     const quoteSupply = getQuoteSupplyForF(fairpool)(baseSupplyExpected)
-//     const stateNext = buy(contract, alice, quoteSupply)(state)
-//     const fairpoolNext = getFairpool(stateNext)
-//     const baseSupplyActual = getTotalSupply(fairpoolNext.balances)
-//     expect(baseSupplyActual).toEqual(baseSupplyExpected)
-//   })
-// })
-
-testFun(async function expectBuySellCycleToReturnInitialBalances() {
+testFun(async function assertBuySellCycleToReturnInitialBalances() {
   const numerators = getNumeratorsArb(2)
   return assertPRD(stateArb, numerators, async (stateIn, numerators) => {
     const fairpool = getFairpool(stateIn)
@@ -339,7 +314,7 @@ testFun(async function expectBuySellCycleToReturnInitialBalances() {
   })
 })
 
-testFun(async function expectBuyTransactionsToGiveProgressivelySmallerBaseAmounts() {
+testFun(async function assertBuyTransactionsToGiveProgressivelySmallerBaseAmounts() {
   const countArb = nat({ max: 100 })
   const quoteDeltaMultiplierArb = bigInt(genericMultiplierConstraints)
   return assertPRD(stateArb, countArb, quoteDeltaMultiplierArb, async (state, count, quoteDeltaMultiplier) => {
@@ -350,14 +325,13 @@ testFun(async function expectBuyTransactionsToGiveProgressivelySmallerBaseAmount
     const actions = quoteDeltasMulti.map(quoteDelta => buy(contract, alice, quoteDelta))
     const history = run(actions)(state)
     const amountsBaseSenderHistory = getAmountsHistoryBaseAlice(history)
-    return isDescendingA(amountsBaseSenderHistory)
+    return isDescending(amountsBaseSenderHistory)
   })
 })
 
-test.skip('sum of buys must be lte to buy of sums', async () => {
+testFun(async function assertSumOfBuysMustBeLteToBuyOfSums() {
   const countArb = integer({ min: 1, max: 100 })
-  const quoteDeltaMultiplierArb = bigInt(genericMultiplierConstraints)
-  return assertPRD(stateArb, countArb, quoteDeltaMultiplierArb, async (state, count, quoteDeltaMultiplier) => {
+  return assertPRD(stateArb, countArb, async (state, count) => {
     const fairpool = getFairpool(state)
     const baseDeltasMulti = times(count, () => num(1))
     const quoteDeltasMulti = getQuoteDeltasFromBaseDeltasF(fairpool)(baseDeltasMulti)
@@ -366,9 +340,10 @@ test.skip('sum of buys must be lte to buy of sums', async () => {
       quoteDeltasMulti,
       quoteDeltasSingle,
     ]
+    console.log('scenarios', scenarios)
     const [amountBaseMulti, amountBaseSingle] = scenarios.map(quoteDeltas => {
       const actions = quoteDeltas.map(quoteDelta => buy(contract, alice, quoteDelta))
-      const history = run(actions)(stateInitial)
+      const history = run(actions)(state)
       const amountsHistory = getAmountsHistoryBaseAlice(history)
       return ensure(last(amountsHistory))
     })
@@ -379,7 +354,7 @@ test.skip('sum of buys must be lte to buy of sums', async () => {
 /**
    * higher quoteOffset -> lower profit
    */
-test.skip('quoteOffset has inverse influence on profit', async () => {
+testFun(async function assertQuoteOffsetHasInverseInfluenceOnProfit() {
   // const minQuoteOffsetIncrement = div(contextDefault.quoteOffset, num(5)) // otherwise the difference between old quoteOffset and new quoteOffset becomes too small
   // const anyQuoteOffsetIncrement = bigInt({ min: minQuoteOffsetIncrement })
   const wallets: NonEmptyArray<Address> = [alice, bob]
@@ -391,16 +366,10 @@ test.skip('quoteOffset has inverse influence on profit', async () => {
     const [stateA, stateB] = states
     const [fairpoolA, fairpoolB] = states.map(getFairpool)
     const quoteDelta = getQuoteDeltaMinF(fairpoolA)
-    const tuples = getTuplesFromWalletsAndNumerators(fairpoolB)(wallets, baseDeltaNumerators)
-    const profits = states.map(state => {
-      return pipe(
-        tuples,
-        ensureNonEmptyArray,
-        getProfitFromTuples,
-      )
-    })
+    const tuples = ensureNonEmptyArray(getTuplesFromWalletsAndNumerators(fairpoolB)(wallets, baseDeltaNumerators))
+    const profits = states.map(getProfitFromTuples(tuples))
     // console.log('profits', profits)
-    const deviations = getDeltasA(profits)
+    const deviations = getDeltas(profits)
     return deviations.every(lte(num(-1)))
   })
 })
@@ -422,21 +391,15 @@ test.skip('baseLimit has zero influence on profit', async () => {
     const [stateA, stateB] = states
     const [fairpoolA, fairpoolB] = states.map(getFairpool)
     const quoteDelta = getQuoteDeltaMinF(fairpoolA)
-    const tuples = getTuplesFromWalletsAndNumerators(fairpoolA)(wallets, baseDeltaNumerators)
-    const profits = states.map(state => {
-      return pipe(
-        tuples,
-        ensureNonEmptyArray,
-        getProfitFromTuples,
-      )
-    })
+    const tuples = ensureNonEmptyArray(getTuplesFromWalletsAndNumerators(fairpoolA)(wallets, baseDeltaNumerators))
+    const profits = states.map(getProfitFromTuples(tuples))
     // console.log('profits', profits)
-    const deviations = getDeltasA(profits)
+    const deviations = getDeltas(profits)
     return deviations.every(lte(num(1)))
   })
 })
 
-test.skip('there exists such a pair of scenarios where the first scenario gives alice zero profit but the second scenario gives alice non-zero profit', async () => {
+testFun(async function expectThereExistsSuchAPairOfScenariosWhereTheFirstScenarioGivesAliceZeroProfitButTheSecondScenarioGivesAliceNonZeroProfit() {
   /**
    * This happens due to low quoteDelta
    * When quoteSupply is low, every buy / sell transaction has the same execution price
@@ -444,11 +407,13 @@ test.skip('there exists such a pair of scenarios where the first scenario gives 
    */
   // const baseLimit = num(20000)
   // const quoteOffset = num(100000)
-  const fairpool = validateFairpool(balancesInitial)({
-    ...clone(fairpoolInitial),
+  const state = clone(stateDefault)
+  state.fairpools[0] = validateFairpool(state.blockchain.balances)({
+    ...state.fairpools[0],
     baseLimit: num(100000),
     quoteOffset: num(200000),
   })
+  const fairpool = getFairpool(state)
   const baseSupplySuperlinearMin = getBaseSupplySuperlinearMinF(fairpool)
   const scenarios = [
     { baseDeltas: [one, one] },
@@ -456,33 +421,32 @@ test.skip('there exists such a pair of scenarios where the first scenario gives 
   ]
   const profits = scenarios.map(({ baseDeltas }) => {
     const [quoteDeltaAlice, quoteDeltaBob] = getQuoteDeltasFromBaseDeltasF(fairpool)(baseDeltas)
+    console.log('[quoteDeltaAlice, quoteDeltaBob]', [quoteDeltaAlice, quoteDeltaBob])
     return getProfitFromTuples([
       [alice, quoteDeltaAlice],
       [bob, quoteDeltaBob],
-    ])
+    ])(state)
   })
   expect(profits[0]).toEqual(zero)
   expect(profits[1]).toBeGreaterThan(zero)
 })
 
-test.skip('3rd party buy orders have direct influence on profit', async () => {
-  // const quoteOffsetMultiplierArb = bigInt({ ...quoteDeltaMultiplierConstraints, min: 2n })
+testFun(async function expectThirdPartyBuyOrdersHaveDirectInfluenceOnProfit() {
   const numeratorsArb = getNumeratorsArb(3)
-  const argsArb = record({
-    state: stateArb,
-    numerators: numeratorsArb,
-    // quoteDeltaBobMultiplier: quoteOffsetMultiplierArb,
-  }).map(function mapArgs(args) {
+  const argsArb = record({ state: stateArb, numerators: numeratorsArb }).map(function mapArgs(args) {
     input(__filename, mapArgs, args)
     const { state, numerators } = args
     const fairpool = getFairpool(state)
     const upscale = mul(num(2))
     const baseLimit = fairpool.baseLimit
-    const quoteOffset = pipe(fairpool.quoteOffset, upscale, upscale) // NOTE: this is a hack to ensure that baseDeltaMin * numerators.length < baseSupplyMax, some tests may fail if the double upscale is not sufficient
+    const quoteOffset = fairpool.quoteOffset // pipe(fairpool.quoteOffset, upscale, upscale) // NOTE: this is a hack to ensure that baseDeltaMin * numerators.length < baseSupplyMax, some tests may fail if the double upscale is not sufficient
     const baseSupplySuperlinearMin = getBaseSupplySuperlinearMin(baseLimit, quoteOffset)
     inner(__filename, mapArgs, { baseLimit, quoteOffset, baseSupplySuperlinearMin })
     const numeratorsNew = sort(numerators, compareNumerals) // ensure that numeratorBob2 is gt numeratorBob1
-    const [quoteDeltaAlice, quoteDeltaBob1, quoteDeltaBob2] = getQuoteDeltasFromBaseDeltaNumeratorsSuperlinearSafe(baseLimit, quoteOffset)(numeratorsNew)
+    const baseSupplySuperlinearRangeLength = baseLimit - baseSupplySuperlinearMin - 1n
+    const baseDeltas = getBaseDeltasFromNumerators(baseLimit, quoteOffset)(1n, baseSupplySuperlinearRangeLength)(numeratorsNew)
+    baseDeltas[0] += baseSupplySuperlinearMin
+    const [quoteDeltaAlice, quoteDeltaBob1, quoteDeltaBob2] = getQuoteDeltasFromBaseDeltas(baseLimit, quoteOffset)(baseDeltas)
     assertBy(lt)(quoteDeltaBob1, quoteDeltaBob2, 'quoteDeltaBob1', 'quoteDeltaBob2')
     const scenarios = [
       [quoteDeltaAlice, quoteDeltaBob1],
@@ -490,7 +454,10 @@ test.skip('3rd party buy orders have direct influence on profit', async () => {
     ]
     fairpool.baseLimit = baseLimit
     fairpool.quoteOffset = quoteOffset
-    return output(__filename, mapArgs, { state, scenarios })
+    return output(__filename, mapArgs, {
+      state,
+      scenarios,
+    })
   })
   return assertPRD(argsArb, async function isEveryDeviationOn3rdPartyOrdersGte1(args) {
     input(__filename, isEveryDeviationOn3rdPartyOrdersGte1, args)
@@ -499,9 +466,9 @@ test.skip('3rd party buy orders have direct influence on profit', async () => {
       return getProfitFromTuples([
         [alice, quoteDeltaAlice],
         [bob, quoteDeltaBob],
-      ])
+      ])(state)
     })
-    const deviations = getDeltasA(profits)
+    const deviations = getDeltas(profits)
     expect(deviations.every(gte(num(1)))).toBeTruthy()
   })
 })
