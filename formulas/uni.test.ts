@@ -11,7 +11,7 @@ import { getShare as $getShare } from '../../utils/arithmetic/getShare'
 import { halve as $halve } from '../../utils/arithmetic/halve'
 import { isDescending as $isDescending } from '../../utils/arithmetic/isDescending'
 import { sum } from '../../utils/arithmetic/sum'
-import { ensureNonEmptyArray, NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
+import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
 import { assertBy, assertEq } from '../../utils/assert'
 import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
 import { dbg, dbgS, debug, inner, input, output } from '../../utils/debug'
@@ -22,14 +22,13 @@ import { get__filename } from '../../utils/node'
 import { compareNumerals } from '../../utils/numeral/sort'
 import { sequentialReducePushV } from '../../utils/promise'
 import { after } from '../../utils/remeda/wrap'
-import { todo } from '../../utils/todo'
 import { fromNumeratorsToValues as $fromNumeratorsToValues } from './arbitraries/fromNumeratorsToValues'
 import { getNumeratorsArb } from './arbitraries/getNumeratorsArb'
 import { toBoundedArray as $toBoundedArray } from './arbitraries/toBoundedArray'
 import { toQuotients as $toQuotients } from './arbitraries/toQuotients'
 import { assertBalanceDiffs } from './assertBalanceDiffs'
 import { cleanState } from './clean'
-import { priceParamMax, priceParamMin, quoteOffsetMin, quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin, scaleFixed } from './constants'
+import { baseLimitMax, baseLimitMin, priceParamMax, priceParamMin, quoteOffsetMax, quoteOffsetMin, quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin, scaleFixed } from './constants'
 import { getAmountD, getAmountsBQ, getBalanceD, getBalancesBQ, logState } from './helpers'
 import { Action, Address, Balance, BalanceTuple, Beneficiary, Blockchain, buy, Context, DistributionParams, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltaMinF, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, PriceParams, selloff, State } from './uni'
 import { validateFairpool } from './validateFairpool'
@@ -68,8 +67,8 @@ const getStateFromPreState = createPipe(getPricingParams, getContext)
 const getBalances = getBalancesBQ(base, quote)
 const getAmounts = getAmountsBQ(base, quote)
 
-// const baseLimitConstraints = { min: baseLimitMin, max: baseLimitMax }
-// const quoteOffsetConstraints = { min: quoteOffsetMin, max: quoteOffsetMax }
+const baseLimitConstraints = { min: baseLimitMin, max: baseLimitMax }
+const quoteOffsetConstraints = { min: quoteOffsetMin, max: quoteOffsetMax }
 const priceParamConstraints = { min: priceParamMin, max: priceParamMax }
 const quoteOffsetMultiplierConstraints = { min: quoteOffsetMultiplierMin }
 const genericMultiplierConstraints = { min: 1n, max: uint256Max.toBigInt() /* should actually be smaller, but we don't know in advance */ }
@@ -100,7 +99,8 @@ const stateDefault: State = {
 }
 const quoteDeltaDefault = getQuoteDeltaMinF(fairpoolDefault)
 
-// const baseLimitArb = bigInt(baseLimitConstraints)
+const baseLimitArb = bigInt(baseLimitConstraints)
+const quoteOffsetArb = bigInt(quoteOffsetConstraints)
 // const quoteOffsetMultiplierProposedArb = bigInt(quoteOffsetMultiplierConstraints)
 // const prePricingParamsArb = record<PrePricingParams>({
 //   quoteOffsetMultiplierProposed: quoteOffsetMultiplierProposedArb,
@@ -340,7 +340,6 @@ testFun(async function assertSumOfBuysMustBeLteToBuyOfSums() {
       quoteDeltasMulti,
       quoteDeltasSingle,
     ]
-    console.log('scenarios', scenarios)
     const [amountBaseMulti, amountBaseSingle] = scenarios.map(quoteDeltas => {
       const actions = quoteDeltas.map(quoteDelta => buy(contract, alice, quoteDelta))
       const history = run(actions)(state)
@@ -352,52 +351,70 @@ testFun(async function assertSumOfBuysMustBeLteToBuyOfSums() {
 })
 
 /**
-   * higher quoteOffset -> lower profit
-   */
-testFun(async function assertQuoteOffsetHasInverseInfluenceOnProfit() {
-  // const minQuoteOffsetIncrement = div(contextDefault.quoteOffset, num(5)) // otherwise the difference between old quoteOffset and new quoteOffset becomes too small
-  // const anyQuoteOffsetIncrement = bigInt({ min: minQuoteOffsetIncrement })
-  const wallets: NonEmptyArray<Address> = [alice, bob]
-  const quoteOffsetMultiplierArb = bigInt(increasingMultiplierConstraints)
-  const baseDeltaNumeratorsArb = getNumeratorsArb(wallets.length)
-  const statesArb: Arbitrary<[State, State]> = todo(/* Get a pair of states where states[0].quoteOffset < states[1].quoteOffset */)
-  return assertPRD(statesArb, quoteOffsetMultiplierArb, baseDeltaNumeratorsArb, async (states, quoteOffsetMultiplier, baseDeltaNumerators) => {
-    // const contextB = { ...stateA, quoteOffset: mul(stateA.quoteOffset, quoteOffsetMultiplier) }
-    const [stateA, stateB] = states
-    const [fairpoolA, fairpoolB] = states.map(getFairpool)
-    const quoteDelta = getQuoteDeltaMinF(fairpoolA)
-    const tuples = ensureNonEmptyArray(getTuplesFromWalletsAndNumerators(fairpoolB)(wallets, baseDeltaNumerators))
-    const profits = states.map(getProfitFromTuples(tuples))
-    // console.log('profits', profits)
-    const deviations = getDeltas(profits)
-    return deviations.every(lte(num(-1)))
-  })
-})
+ * NOTE: assertQuoteOffsetHasInverseInfluenceOnProfit can't be tested reliably because it's difficult to find a pair of quoteDeltaTuple where each quoteDelta is optimal under two different (baseLimit, quoteOffset) pairs
+ * higher quoteOffset -> lower profit
+ */
+// testFun(async function assertQuoteOffsetHasInverseInfluenceOnProfit() {
+//   // const minQuoteOffsetIncrement = div(contextDefault.quoteOffset, num(5)) // otherwise the difference between old quoteOffset and new quoteOffset becomes too small
+//   // const anyQuoteOffsetIncrement = bigInt({ min: minQuoteOffsetIncrement })
+//   const wallets: NonEmptyArray<Address> = [alice, bob]
+//   const quoteOffsetAddendArb = quoteOffsetArb
+//   const baseDeltaNumeratorsArb = getNumeratorsArb(wallets.length)
+//   /* Get a pair of states where states[0].fairpools[0].quoteOffset < states[1].fairpools[0].quoteOffset */
+//   const statesWithIncreasingQuoteOffsetArb = record({
+//     state: stateArb,
+//     quoteOffsetAddend: quoteOffsetAddendArb,
+//   })
+//     .map(({ state: stateOld, quoteOffsetAddend }) => {
+//       const stateNew = clone(stateOld)
+//       const [fairpoolOld, fairpoolNew] = [stateOld, stateNew].map(getFairpool)
+//       const quoteOffsetAddendClamped = clampIn(0n, quoteOffsetMax - fairpoolNew.quoteOffset)(quoteOffsetAddend)
+//       fairpoolNew.quoteOffset = fairpoolNew.quoteOffset + quoteOffsetAddendClamped
+//       assert.gte(fairpoolNew.quoteOffset, fairpoolOld.quoteOffset, 'fairpoolNew.quoteOffset', 'fairpoolOld.quoteOffset')
+//       return [stateOld, stateNew]
+//     })
+//     .filter(states => allUnique(states.map(s => getFairpoolQuoteOffset(s))))
+//   return assertPRD(statesWithIncreasingQuoteOffsetArb, baseDeltaNumeratorsArb, async (states, baseDeltaNumerators) => {
+//     const [stateA, stateB] = states
+//     const [fairpoolA, fairpoolB] = states.map(getFairpool)
+//     console.log('[fairpoolA, fairpoolB]', [fairpoolA, fairpoolB])
+//     const tuples = ensureNonEmptyArray(getTuplesFromWalletsAndNumerators(fairpoolA)(wallets, baseDeltaNumerators))
+//     console.log('tuples', tuples)
+//     const profits = states.map(getProfitFromTuples(tuples))
+//     console.log('profits', profits)
+//     // console.log('profits', profits)
+//     const deviations = getDeltas(profits)
+//     return deviations.every(gte(num(1)))
+//   })
+// })
 
-test.skip('baseLimit has zero influence on profit', async () => {
-  const wallets: NonEmptyArray<Address> = [alice, bob]
-  const baseDeltaNumeratorsArb = getNumeratorsArb(wallets.length)
-  // return assertRP(baseLimitArb, increasingMultiplierArb, increasingMultiplierArb, baseDeltaNumeratorsArb, async (baseLimit, baseLimitMultiplier, quoteOffsetMultiplier, baseDeltaNumerators) => {
-  // const preContextB = { ...preContextA, quoteOffsetMultiplier: add(quoteOffsetMultiplierIncrement)(preContextA.quoteOffsetMultiplier) }
-  // TODO: Use the same approach with the pairs of states as in the previous test
-  // const baseLimitA = baseLimit
-  // const baseLimitB = pipe(baseLimit, mul(baseLimitMultiplier))
-  // const quoteOffset = pipe(baseLimit, mul(baseLimitMultiplier), mul(quoteOffsetMultiplier))
-  // const contextA = getContext({ baseLimit: baseLimitA, quoteOffset })
-  // const contextB = getContext({ baseLimit: baseLimitB, quoteOffset })
-  // assertBy(lt)(contextA.baseLimit, contextB.baseLimit, 'contextA.baseLimit', 'contextB.baseLimit')
-  const statesArb: Arbitrary<[State, State]> = todo(/* Get a pair of states where states[0].baseLimit < states[1].baseLimit */)
-  return assertPRD(statesArb, baseDeltaNumeratorsArb, async (states, baseDeltaNumerators) => {
-    const [stateA, stateB] = states
-    const [fairpoolA, fairpoolB] = states.map(getFairpool)
-    const quoteDelta = getQuoteDeltaMinF(fairpoolA)
-    const tuples = ensureNonEmptyArray(getTuplesFromWalletsAndNumerators(fairpoolA)(wallets, baseDeltaNumerators))
-    const profits = states.map(getProfitFromTuples(tuples))
-    // console.log('profits', profits)
-    const deviations = getDeltas(profits)
-    return deviations.every(lte(num(1)))
-  })
-})
+/**
+ * Not attempting to test assertBaseLimitHasZeroInfluenceOnProfit because of the same issue as with assertQuoteOffsetHasInverseInfluenceOnProfit
+ */
+// testFun(async function assertBaseLimitHasZeroInfluenceOnProfit() {
+//   const wallets: NonEmptyArray<Address> = [alice, bob]
+//   const baseDeltaNumeratorsArb = getNumeratorsArb(wallets.length)
+//   // return assertRP(baseLimitArb, increasingMultiplierArb, increasingMultiplierArb, baseDeltaNumeratorsArb, async (baseLimit, baseLimitMultiplier, quoteOffsetMultiplier, baseDeltaNumerators) => {
+//   // const preContextB = { ...preContextA, quoteOffsetMultiplier: add(quoteOffsetMultiplierIncrement)(preContextA.quoteOffsetMultiplier) }
+//   // TODO: Use the same approach with the pairs of states as in the previous test
+//   // const baseLimitA = baseLimit
+//   // const baseLimitB = pipe(baseLimit, mul(baseLimitMultiplier))
+//   // const quoteOffset = pipe(baseLimit, mul(baseLimitMultiplier), mul(quoteOffsetMultiplier))
+//   // const contextA = getContext({ baseLimit: baseLimitA, quoteOffset })
+//   // const contextB = getContext({ baseLimit: baseLimitB, quoteOffset })
+//   // assertBy(lt)(contextA.baseLimit, contextB.baseLimit, 'contextA.baseLimit', 'contextB.baseLimit')
+//   const statesArb: Arbitrary<[State, State]> = todo(/* Get a pair of states where states[0].baseLimit < states[1].baseLimit */)
+//   return assertPRD(statesArb, baseDeltaNumeratorsArb, async (states, baseDeltaNumerators) => {
+//     const [stateA, stateB] = states
+//     const [fairpoolA, fairpoolB] = states.map(getFairpool)
+//     const quoteDelta = getQuoteDeltaMinF(fairpoolA)
+//     const tuples = ensureNonEmptyArray(getTuplesFromWalletsAndNumerators(fairpoolA)(wallets, baseDeltaNumerators))
+//     const profits = states.map(getProfitFromTuples(tuples))
+//     // console.log('profits', profits)
+//     const deviations = getDeltas(profits)
+//     return deviations.every(lte(num(1)))
+//   })
+// })
 
 testFun(async function expectThereExistsSuchAPairOfScenariosWhereTheFirstScenarioGivesAliceZeroProfitButTheSecondScenarioGivesAliceNonZeroProfit() {
   /**
@@ -421,7 +438,6 @@ testFun(async function expectThereExistsSuchAPairOfScenariosWhereTheFirstScenari
   ]
   const profits = scenarios.map(({ baseDeltas }) => {
     const [quoteDeltaAlice, quoteDeltaBob] = getQuoteDeltasFromBaseDeltasF(fairpool)(baseDeltas)
-    console.log('[quoteDeltaAlice, quoteDeltaBob]', [quoteDeltaAlice, quoteDeltaBob])
     return getProfitFromTuples([
       [alice, quoteDeltaAlice],
       [bob, quoteDeltaBob],

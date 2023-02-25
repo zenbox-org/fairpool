@@ -1,4 +1,6 @@
 import { uint128Max } from '../../bn/constants'
+import { clamp } from '../../utils/arithmetic/clamp'
+import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
 
 export const priceParamMin = 1000n
 
@@ -19,3 +21,5 @@ export const quoteOffsetMultiplierMaxGetter = (baseLimit: bigint) => baseLimitMa
 export const holdersPerDistributionMaxFixed = 256n
 
 export const scaleFixed = 1000000n
+
+export const clampQuoteOffset = clamp(BigIntArithmetic)(quoteOffsetMin, quoteOffsetMax)

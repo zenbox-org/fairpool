@@ -391,7 +391,11 @@ export const selloff = (contract: Address, sender: Address) => asSafeMutator((st
   return sell(contract, sender, baseDelta)(state)
 })
 
-export const getFairpool = (state: State, index = 0) => ensureByIndex(state.fairpools, index)
+export const getFairpoolAt = (index: number) => (state: State) => ensureByIndex(state.fairpools, index)
+
+export const getFairpool = getFairpoolAt(0)
+
+export const getFairpoolQuoteOffset = (state: State) => getFairpool(state).quoteOffset
 
 export const getBalancesBase = (state: State, index = 0) => ensureByIndex(state.fairpools, index).balances
 
