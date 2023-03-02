@@ -1,5 +1,34 @@
 # Fairpool formulas
 
+Fairpool formulas contain:
+
+* The primary formula for calculating the baseDelta and quoteDelta ([link](#basedelta-and-quotedelta))
+* The secondary formulas for calculating other variables, derived from the primary formula 
+
+## Overview
+
+We want the price formula to have the following properties:
+
+* Each buy transaction increases the price (base supply increases -> immediate price increases).
+* Each buy transaction increases the profit that could be realized from buying and selling quickly (base supply increases -> immediate profit increases).
+
+The second property is non-trivial. For example, here is a pair of scenarios:
+
+* Scenario 1
+  * Bob buys for 1 ETH
+  * Alice buys for 1 ETH
+  * Sam buys for 1 ETH
+  * Alice sells off her whole balance, receiving X ETH profit
+* Scenario 2
+  * Bob buys for 100 ETH
+  * Alice buys for 1 ETH
+  * Sam buys for 1 ETH
+  * Alice sells off her whole balance, receiving Y ETH profit
+
+We want Y > X because 100 ETH > 1 ETH (Bob's purchase in Scenario 2 is larger).
+
+In other words, if the contract is filled with ETH already, the speculators can make more profit (a higher portion of Sam's purchase becomes Alice's profit).
+
 ## baseDelta and quoteDelta
 
 ```typescript
