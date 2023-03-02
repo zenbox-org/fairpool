@@ -1,6 +1,6 @@
-import { assert } from '../../utils/bigint/BigIntArithmetic'
-import { baseLimitMax, baseLimitMin, quoteOffsetMax, quoteOffsetMin } from './constants'
-import { PriceParams } from './uni'
+import { assert } from '../../../utils/bigint/BigIntArithmetic'
+import { baseLimitMax, baseLimitMin, quoteOffsetMax, quoteOffsetMin } from '../constants'
+import { PriceParams } from '../uni'
 
 export const validatePricingParams = <T extends PriceParams>(params: T) => {
   const { baseLimit, quoteOffset } = params

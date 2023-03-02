@@ -12,7 +12,7 @@ import { halve as $halve } from '../../utils/arithmetic/halve'
 import { isDescending as $isDescending } from '../../utils/arithmetic/isDescending'
 import { sum } from '../../utils/arithmetic/sum'
 import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
-import { assertBy, assertEq } from '../../utils/assert'
+import { assertByBinary, assertEq } from '../../utils/assert'
 import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
 import { dbg, dbgS, debug, inner, input, output } from '../../utils/debug'
 import { ensure } from '../../utils/ensure'
@@ -22,6 +22,7 @@ import { get__filename } from '../../utils/node'
 import { compareNumerals } from '../../utils/numeral/sort'
 import { sequentialReducePushV } from '../../utils/promise'
 import { after } from '../../utils/remeda/wrap'
+import { todo } from '../../utils/todo'
 import { fromNumeratorsToValues as $fromNumeratorsToValues } from './arbitraries/fromNumeratorsToValues'
 import { getNumeratorsArb } from './arbitraries/getNumeratorsArb'
 import { toBoundedArray as $toBoundedArray } from './arbitraries/toBoundedArray'
@@ -31,8 +32,8 @@ import { cleanState } from './clean'
 import { baseLimitMax, baseLimitMin, priceParamMax, priceParamMin, quoteOffsetMax, quoteOffsetMin, quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin, scaleFixed } from './constants'
 import { getAmountD, getAmountsBQ, getBalanceD, getBalancesBQ, logState } from './helpers'
 import { Action, Address, Balance, BalanceTuple, Beneficiary, Blockchain, buy, Context, DistributionParams, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltaMinF, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, PriceParams, selloff, State } from './uni'
-import { validateFairpool } from './validateFairpool'
-import { validatePricingParams } from './validatePricingParams'
+import { validateFairpool } from './validators/validateFairpool'
+import { validatePricingParams } from './validators/validatePricingParams'
 import { fairpoolZero } from './zero'
 
 const arithmetic = BigIntArithmetic
@@ -124,10 +125,11 @@ const getBeneficiariesArb = (addresses: Address[]): Arbitrary<Beneficiary[]> => 
     return zip(addresses, shares).map(([address, share]) => ({ address, share }))
   })
 }
-const distributionParamsArb: Arbitrary<DistributionParams> = getScaledValuesArb(3).map(distributionParams => ({
+const distributionParamsArb: Arbitrary<DistributionParams> = getScaledValuesArb(4).map(distributionParams => ({
   royalties: distributionParams[0],
   earnings: distributionParams[1],
   fees: distributionParams[2],
+  // distributionParams[4] is intentionally unused, so that the total sum may be less than scaleFixed
 }))
 const fairpoolArb = (users: Address[]) => record({
   priceParams: priceParamsArb,
@@ -416,7 +418,7 @@ testFun(async function assertSumOfBuysMustBeLteToBuyOfSums() {
 //   })
 // })
 
-testFun(async function expectThereExistsSuchAPairOfScenariosWhereTheFirstScenarioGivesAliceZeroProfitButTheSecondScenarioGivesAliceNonZeroProfit() {
+testFun(async function assertThereExistsSuchAPairOfScenariosWhereTheFirstScenarioGivesAliceZeroProfitButTheSecondScenarioGivesAliceNonZeroProfit() {
   /**
    * This happens due to low quoteDelta
    * When quoteSupply is low, every buy / sell transaction has the same execution price
@@ -447,7 +449,7 @@ testFun(async function expectThereExistsSuchAPairOfScenariosWhereTheFirstScenari
   expect(profits[1]).toBeGreaterThan(zero)
 })
 
-testFun(async function expectThirdPartyBuyOrdersHaveDirectInfluenceOnProfit() {
+testFun(async function assertThirdPartyBuyOrdersHaveDirectInfluenceOnProfit() {
   const numeratorsArb = getNumeratorsArb(3)
   const argsArb = record({ state: stateArb, numerators: numeratorsArb }).map(function mapArgs(args) {
     input(__filename, mapArgs, args)
@@ -463,7 +465,7 @@ testFun(async function expectThirdPartyBuyOrdersHaveDirectInfluenceOnProfit() {
     const baseDeltas = getBaseDeltasFromNumerators(baseLimit, quoteOffset)(1n, baseSupplySuperlinearRangeLength)(numeratorsNew)
     baseDeltas[0] += baseSupplySuperlinearMin
     const [quoteDeltaAlice, quoteDeltaBob1, quoteDeltaBob2] = getQuoteDeltasFromBaseDeltas(baseLimit, quoteOffset)(baseDeltas)
-    assertBy(lt)(quoteDeltaBob1, quoteDeltaBob2, 'quoteDeltaBob1', 'quoteDeltaBob2')
+    assertByBinary(lt)(quoteDeltaBob1, quoteDeltaBob2, 'quoteDeltaBob1', 'quoteDeltaBob2')
     const scenarios = [
       [quoteDeltaAlice, quoteDeltaBob1],
       [quoteDeltaAlice, quoteDeltaBob2],
@@ -488,3 +490,19 @@ testFun(async function expectThirdPartyBuyOrdersHaveDirectInfluenceOnProfit() {
     expect(deviations.every(gte(num(1)))).toBeTruthy()
   })
 })
+
+// testFun(async function assertTalliesNeverChangeInDutyFreeContract() {
+//   return todo()
+// })
+//
+// testFun(async function assertTalliesIncreaseAfterSellInNormalContract() {
+//   return todo()
+// })
+//
+// testFun(async function assertTallyOfSellerIsAlwaysZero() {
+//   return todo()
+// })
+//
+// testFun(async function assertTallyOfSenderIsAlwaysZeroAfterWithdraw() {
+//   return todo()
+// })

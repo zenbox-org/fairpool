@@ -3,7 +3,7 @@ import { sumAmounts } from '../../utils/arithmetic/sum'
 import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
 import { ensureFind } from '../../utils/ensure'
 import { Address, Asset, Balance, byAssetWallet, Fairpool, Fint, State } from './uni'
-import { validateBalance } from './validateBalance'
+import { validateBalance } from './validators/validateBalance'
 
 export const getBalancesBQ = (baseAsset: Asset, quoteAsset: Asset) => (wallet: Address) => (balances: Fint[]) => {
   const base = getBalanceR(baseAsset)(wallet)(balances)

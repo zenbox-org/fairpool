@@ -17,7 +17,7 @@ import { meldWithLast } from '../../utils/remeda/meldWithLast'
 import { toBoundedArray } from './arbitraries/toBoundedArray'
 import { toQuotients } from './arbitraries/toQuotients'
 import { getAmount, getBalanceD, getTotalSupply, grabBalance } from './helpers'
-import { validateFairpools } from './validateFairpool'
+import { validateFairpools } from './validators/validateFairpool'
 
 type N = bigint
 

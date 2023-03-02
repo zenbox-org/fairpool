@@ -8,9 +8,9 @@ import { isLogEnabled } from '../../utils/debug'
 import { baseLimitMin, holdersPerDistributionMaxFixed, quoteOffsetMin, scaleFixed } from './constants'
 import { getExperimentOutputMin } from './experiments'
 import { Fairpool } from './uni'
-import { validateBalance } from './validateBalance'
-import { validateFairpool } from './validateFairpool'
-import { validatePricingParams } from './validatePricingParams'
+import { validateBalance } from './validators/validateBalance'
+import { validateFairpool } from './validators/validateFairpool'
+import { validatePricingParams } from './validators/validatePricingParams'
 
 const arithmetic = BigIntArithmetic
 const assert = getAssert(arithmetic)

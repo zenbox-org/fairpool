@@ -1,7 +1,7 @@
 import { Arithmetic } from '../../../utils/arithmetic'
 import { getQuotientOf } from '../../../utils/arithmetic/getQuotientOf'
 import { Quotient } from '../../../utils/arithmetic/Quotient'
-import { assertBy } from '../../../utils/assert'
+import { assertByBinary } from '../../../utils/assert'
 
 /**
  * Produces an array of values where:
@@ -15,6 +15,6 @@ export const toBoundedArray = <N>(arithmetic: Arithmetic<N>) => (valueMin: N, va
   const valueSumMin = mul(valueMin, num(quotients.length))
   const valueSumMaxLocal = sub(valueSumMax, valueSumMin)
   const getQuotientArith = getQuotientOf(arithmetic)
-  assertBy(gt)(valueSumMaxLocal, zero, 'valueSumMaxLocal', 'zero')
+  assertByBinary(gt)(valueSumMaxLocal, zero, 'valueSumMaxLocal', 'zero')
   return quotients.map(quotient => add(getQuotientArith(quotient)(valueSumMaxLocal), valueMin))
 }
