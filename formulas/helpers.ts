@@ -1,6 +1,6 @@
 import { pipe } from 'remeda'
 import { sumAmounts } from '../../utils/arithmetic/sum'
-import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
+import { BigIntArithmetic } from '../../utils/bigint.arithmetic'
 import { ensureFind } from '../../utils/ensure'
 import { Address, Asset, Balance, byAssetWallet, Fairpool, Fint, State } from './uni'
 import { validateBalance } from './validators/validateBalance'

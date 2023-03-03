@@ -1,4 +1,4 @@
-import { assert } from '../../../utils/bigint/BigIntArithmetic'
+import { assert } from '../../../utils/bigint.arithmetic'
 import { Balance } from '../uni'
 
 export const validateBalances = (balances: Balance[]) => {

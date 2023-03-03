@@ -1,4 +1,4 @@
-import { assert } from '../../../utils/bigint/BigIntArithmetic'
+import { assert } from '../../../utils/bigint.arithmetic'
 import { isEqualBy } from '../../../utils/lodash'
 import { getAmountD, getTotalSupply } from '../helpers'
 import { Balance, Fairpool, getBaseSupplyF, getQuoteSupplyF } from '../uni'

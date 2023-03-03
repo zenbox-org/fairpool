@@ -1,6 +1,6 @@
 import { pipe } from 'remeda'
 import { clamp } from '../../utils/arithmetic/clamp'
-import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
+import { BigIntArithmetic } from '../../utils/bigint.arithmetic'
 import { baseLimitMin, quoteOffsetMin } from './constants'
 import { getSupplyInfo, toStringSupplyInfo } from './stats/getSupplyInfo'
 

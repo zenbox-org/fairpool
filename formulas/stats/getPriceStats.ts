@@ -1,5 +1,5 @@
 import { getDeltas } from '../../../utils/arithmetic/getDeltas'
-import { BigIntArithmetic } from '../../../utils/bigint/BigIntArithmetic'
+import { BigIntArithmetic } from '../../../utils/bigint.arithmetic'
 import { stringify } from '../../../utils/JSON'
 import { rangeBigInt } from '../../../utils/remeda/rangeBigInt'
 import { Fairpool, getBaseSupply, getFairpoolFun, getPricingParamsFromFairpool } from '../uni'

@@ -1,6 +1,6 @@
 import { uint128Max } from '../../bn/constants'
 import { clamp } from '../../utils/arithmetic/clamp'
-import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
+import { BigIntArithmetic } from '../../utils/bigint.arithmetic'
 
 export const priceParamMin = 1000n
 

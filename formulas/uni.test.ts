@@ -1,5 +1,5 @@
 import { test } from '@jest/globals'
-import { array, bigInt, constant, constantFrom, integer, nat, record, tuple } from 'fast-check'
+import { array, bigInt, constant, constantFrom, integer, record, tuple } from 'fast-check'
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
 import { clone, createPipe, last, map, sort, times, zip } from 'remeda'
 import { uint256Max } from '../../bn/constants'
@@ -9,11 +9,11 @@ import { getAssert } from '../../utils/arithmetic/getAssert'
 import { getDeltas as $getDeltas } from '../../utils/arithmetic/getDeltas'
 import { getShare as $getShare } from '../../utils/arithmetic/getShare'
 import { halve as $halve } from '../../utils/arithmetic/halve'
-import { isDescending as $isDescending } from '../../utils/arithmetic/isDescending'
+import { isAscending, isAscendingStrict } from '../../utils/arithmetic/order'
 import { sum } from '../../utils/arithmetic/sum'
 import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
 import { assertByBinary, assertEq } from '../../utils/assert'
-import { BigIntArithmetic } from '../../utils/bigint/BigIntArithmetic'
+import { BigIntArithmetic } from '../../utils/bigint.arithmetic'
 import { dbg, dbgS, debug, inner, input, output } from '../../utils/debug'
 import { ensure } from '../../utils/ensure'
 import { assertPRD } from '../../utils/fast-check/assert'
@@ -23,6 +23,8 @@ import { compareNumerals } from '../../utils/numeral/sort'
 import { sequentialReducePushV } from '../../utils/promise'
 import { after } from '../../utils/remeda/wrap'
 import { todo } from '../../utils/todo'
+import { Referral } from '../models/Referral'
+import { PairOfReferralsSortedAscendingByLength } from '../models/Referral/PairOfReferralsSortedAscendingByLength'
 import { fromNumeratorsToValues as $fromNumeratorsToValues } from './arbitraries/fromNumeratorsToValues'
 import { getNumeratorsArb } from './arbitraries/getNumeratorsArb'
 import { toBoundedArray as $toBoundedArray } from './arbitraries/toBoundedArray'
@@ -30,8 +32,8 @@ import { toQuotients as $toQuotients } from './arbitraries/toQuotients'
 import { assertBalanceDiffs } from './assertBalanceDiffs'
 import { cleanState } from './clean'
 import { baseLimitMax, baseLimitMin, priceParamMax, priceParamMin, quoteOffsetMax, quoteOffsetMin, quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin, scaleFixed } from './constants'
-import { getAmountD, getAmountsBQ, getBalanceD, getBalancesBQ, logState } from './helpers'
-import { Action, Address, Balance, BalanceTuple, Beneficiary, Blockchain, buy, Context, DistributionParams, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltaMinF, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, PriceParams, selloff, State } from './uni'
+import { getAmountD, getAmountsBQ, getBalanceD, getBalancesBQ } from './helpers'
+import { Action, Address, Amount, Balance, BalanceTuple, Beneficiary, Blockchain, buy, Context, DistributionParams, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltaMinF, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, PriceParams, selloff, State } from './uni'
 import { validateFairpool } from './validators/validateFairpool'
 import { validatePricingParams } from './validators/validatePricingParams'
 import { fairpoolZero } from './zero'
@@ -47,7 +49,8 @@ const fromNumeratorsToValues = $fromNumeratorsToValues(arithmetic)
 const clamp = $clamp(arithmetic)
 const clampIn = $clampIn(arithmetic)
 const getDeltas = $getDeltas(arithmetic)
-const isDescending = $isDescending(arithmetic)
+const isAscendingBI = isAscending(BigIntArithmetic)
+const isAscendingStrictBI = isAscendingStrict(BigIntArithmetic)
 const users = ['alice', 'bob', 'sam', 'ted']
 const addresses = ['contract', ...users]
 const assets = ['base', 'quote']
@@ -67,6 +70,8 @@ const getContext = (params: PriceParams): Context => ({ arithmetic, baseAsset: b
 const getStateFromPreState = createPipe(getPricingParams, getContext)
 const getBalances = getBalancesBQ(base, quote)
 const getAmounts = getAmountsBQ(base, quote)
+const clampBaseDeltaRaw = (baseLimit: bigint) => clamp(0n, baseLimit)
+const clampBaseDeltaRawByState = (state: State) => clampBaseDeltaRaw(getFairpool(state).baseLimit)
 
 const baseLimitConstraints = { min: baseLimitMin, max: baseLimitMax }
 const quoteOffsetConstraints = { min: quoteOffsetMin, max: quoteOffsetMax }
@@ -102,6 +107,8 @@ const quoteDeltaDefault = getQuoteDeltaMinF(fairpoolDefault)
 
 const baseLimitArb = bigInt(baseLimitConstraints)
 const quoteOffsetArb = bigInt(quoteOffsetConstraints)
+const baseDeltaRawArb = bigInt({ min: 1n, max: baseLimitMax - 1n })
+const countArb = integer({ min: 1, max: 100 })
 // const quoteOffsetMultiplierProposedArb = bigInt(quoteOffsetMultiplierConstraints)
 // const prePricingParamsArb = record<PrePricingParams>({
 //   quoteOffsetMultiplierProposed: quoteOffsetMultiplierProposedArb,
@@ -111,13 +118,14 @@ const toSortedBaseLimitQuoteOffset = sort<bigint>(compareNumerals)
 const priceParamArb = bigInt(priceParamConstraints)
 const priceParamsArb = tuple(priceParamArb, priceParamArb).map(toSortedBaseLimitQuoteOffset).map(([baseLimit, quoteOffset]) => ({ baseLimit, quoteOffset }))
 const uint256Arb = bigInt({ min: 0n, max: uint256Max.toBigInt() })
+
 const supplyStatArb = record({
   params: priceParamsArb,
   supply: uint256Arb,
 }).map(({ params: { baseLimit, quoteOffset }, supply }) => ({
   baseLimit,
   quoteOffset,
-  supply: clamp(0n, baseLimit)(supply),
+  supply: clampBaseDeltaRaw(baseLimit)(supply),
 }))
 const getScaledValuesArb = (length: number) => getNumeratorsArb(length, 0).map(fromNumeratorsToValues(0n, scaleFixed))
 const getBeneficiariesArb = (addresses: Address[]): Arbitrary<Beneficiary[]> => {
@@ -149,6 +157,14 @@ const getStateArb = (users: Address[]) => record<State>({
   blockchain: constant(blockchainDefault),
 })
 const stateArb = getStateArb(users)
+
+const stateWithBaseDeltaArb = record({
+  state: stateArb,
+  baseDeltaRaw: baseDeltaRawArb,
+}).map(({ state, baseDeltaRaw }) => ({
+  state,
+  baseDelta: clampBaseDeltaRawByState(state)(baseDeltaRaw),
+}))
 const increasingMultiplierArb = bigInt(increasingMultiplierConstraints)
 
 const getBalancesStats = (state: State) => getBalancesLocalD([alice, bob])(getFairpool(state), state.blockchain)
@@ -256,7 +272,6 @@ testFun(async function assertStaticScenarioToSucceed() {
       [bob, quote, num(-2)],
     ]),
     selloff(contract, bob),
-    logState,
     check([
       [alice, base, num(1)],
       [alice, quote, num(-2)],
@@ -316,23 +331,17 @@ testFun(async function assertBuySellCycleToReturnInitialBalances() {
   })
 })
 
-testFun(async function assertBuyTransactionsToGiveProgressivelySmallerBaseAmounts() {
-  const countArb = nat({ max: 100 })
-  const quoteDeltaMultiplierArb = bigInt(genericMultiplierConstraints)
-  return assertPRD(stateArb, countArb, quoteDeltaMultiplierArb, async (state, count, quoteDeltaMultiplier) => {
-    logState(state)
+testFun(async function assertAscendingQuoteDeltasForSameBaseDeltas() {
+  return assertPRD(stateArb, countArb, async (state, count) => {
     const fairpool = getFairpool(state)
-    const baseDeltasMulti = times(count, () => num(1))
+    const baseDelta = (fairpool.baseLimit - 1n) / BigInt(count)
+    const baseDeltasMulti = times(count, () => baseDelta)
     const quoteDeltasMulti = getQuoteDeltasFromBaseDeltasF(fairpool)(baseDeltasMulti)
-    const actions = quoteDeltasMulti.map(quoteDelta => buy(contract, alice, quoteDelta))
-    const history = run(actions)(state)
-    const amountsBaseSenderHistory = getAmountsHistoryBaseAlice(history)
-    return isDescending(amountsBaseSenderHistory)
+    return isAscendingStrictBI(quoteDeltasMulti)
   })
 })
 
 testFun(async function assertSumOfBuysMustBeLteToBuyOfSums() {
-  const countArb = integer({ min: 1, max: 100 })
   return assertPRD(stateArb, countArb, async (state, count) => {
     const fairpool = getFairpool(state)
     const baseDeltasMulti = times(count, () => num(1))
@@ -491,18 +500,27 @@ testFun(async function assertThirdPartyBuyOrdersHaveDirectInfluenceOnProfit() {
   })
 })
 
-// testFun(async function assertTalliesNeverChangeInDutyFreeContract() {
-//   return todo()
-// })
-//
-// testFun(async function assertTalliesIncreaseAfterSellInNormalContract() {
-//   return todo()
-// })
-//
-// testFun(async function assertTallyOfSellerIsAlwaysZero() {
-//   return todo()
-// })
-//
-// testFun(async function assertTallyOfSenderIsAlwaysZeroAfterWithdraw() {
-//   return todo()
-// })
+testFun.skip(async function assertTalliesNeverChangeInDutyFreeContract() {
+  return todo()
+})
+
+testFun.skip(async function assertTalliesIncreaseAfterSellInNormalContract() {
+  return todo()
+})
+
+testFun.skip(async function assertTallyOfSellerIsAlwaysZero() {
+  return todo()
+})
+
+testFun.skip(async function assertTallyOfSenderIsAlwaysZeroAfterWithdraw() {
+  return todo()
+})
+
+testFun.skip(async function assertQuoteReceivedDoesNotDecreaseIfReferralsArrayIsIncreased() {
+  const referralsPairArb = todo<Arbitrary<PairOfReferralsSortedAscendingByLength>>()
+  return assertPRD(stateArb, referralsPairArb, async function (state, pairOfReferrals) {
+    const toQuoteReceived = todo<(referrals: Referral[]) => Amount>()
+    const quoteReceived = pairOfReferrals.map(toQuoteReceived)
+    return isAscendingBI(quoteReceived)
+  })
+})

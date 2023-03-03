@@ -1,5 +1,5 @@
 import { renderSharePercent, renderWeightAsPower } from '../models/TokenParams/renderTokenParams'
-import { toRenderedAmountBNS } from '../../utils/bignumber.convert'
+import { toRenderedAmountBNS } from '../../utils/BigNumber.convert'
 import { SlopeScale } from '../constants'
 import { TokenFieldInfo } from '../models/TokenFieldInfo'
 import { TokenParams } from '../models/TokenParams'

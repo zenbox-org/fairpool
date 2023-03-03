@@ -1,4 +1,4 @@
-import { toFrontendAmountBND } from '../../../../utils/bignumber.convert'
+import { toFrontendAmountBND } from '../../../../utils/BigNumber.convert'
 import { BN } from '../../../../bn'
 import { SellParams } from '../SellParams'
 import { SellFormValues } from '../SellFormValues'

@@ -1,6 +1,6 @@
 import { TokenParams } from '../TokenParams'
-import { asPercent, toRenderedAmountBNS } from '../../../utils/bignumber.convert'
-import { num } from '../../../utils/bignumber'
+import { asPercent, toRenderedAmountBNS } from '../../../utils/BigNumber.convert'
+import { num } from '../../../utils/BigNumber.utils'
 
 export const renderBasePercent = (token: TokenParams) => asPercent(toRenderedAmountBNS(token.scale))
 

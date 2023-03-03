@@ -1,9 +1,9 @@
 import { isEqualByD } from 'libs/utils/lodash'
 import { getArraySchema } from 'libs/utils/zod'
 import { z } from 'zod'
+import { AddressSchema } from '../../ethereum/models/Address'
 import { TradeAmountSchema } from './TradeAmount'
 import { TradeTransactionSchema } from './TradeTransaction'
-import { AddressSchema } from '../../ethereum/models/Address'
 
 /**
  * IMPORTANT: Trade is different from TradeEvent

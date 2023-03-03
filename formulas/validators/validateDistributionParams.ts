@@ -1,4 +1,4 @@
-import { assert } from '../../../utils/bigint/BigIntArithmetic'
+import { assert } from '../../../utils/bigint.arithmetic'
 import { DistributionParams } from '../uni'
 
 export const validateDistributionParams = (scale: bigint) => (params: DistributionParams) => {
