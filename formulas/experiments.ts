@@ -1,10 +1,9 @@
 import { pipe } from 'remeda'
-import { clamp } from '../../utils/arithmetic/clamp'
-import { BigIntArithmetic } from '../../utils/bigint.arithmetic'
+import { BigIntBasicOperations } from '../../utils/bigint.arithmetic'
 import { baseLimitMin, quoteOffsetMin } from './constants'
 import { getSupplyInfo, toStringSupplyInfo } from './stats/getSupplyInfo'
 
-const clampBigInt = clamp(BigIntArithmetic)
+const { clamp } = BigIntBasicOperations
 
 // const scale = 10n ** 18n
 const scale = 1n

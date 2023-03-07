@@ -5,19 +5,17 @@ import { FintGen, FintGenTuple } from '../../finance/models/FintGen'
 import { getGenMutilatorsWithAmount } from '../../finance/models/FintGen/getGenMutilatorsWithAmount'
 import { toFintGenTuple } from '../../finance/models/FintGen/toFintGenTuple'
 import { Mutator } from '../../generic/models/Mutator'
-import { Arithmetic } from '../../utils/arithmetic'
-import { getAssert } from '../../utils/arithmetic/getAssert'
-import { halve as $halve } from '../../utils/arithmetic/halve'
-import { BigIntArithmetic } from '../../utils/bigint.arithmetic'
+import { BigIntAllAssertions, BigIntBasicArithmetic, BigIntBasicOperations } from '../../utils/bigint.arithmetic'
 import { inner, input, output } from '../../utils/debug'
 import { ensureByIndex, ensureFind, getFinder } from '../../utils/ensure'
 import { AssertionFailedError } from '../../utils/error'
 import { get__filename } from '../../utils/node'
 import { meldWithLast } from '../../utils/remeda/meldWithLast'
-import { toBoundedArray } from './arbitraries/toBoundedArray'
-import { toQuotients } from './arbitraries/toQuotients'
+import { todo } from '../../utils/todo'
+import { BigIntQuotientFunctions } from './arbitraries/getQuotientFunctions'
 import { getAmount, getBalanceD, getTotalSupply, grabBalance } from './helpers'
 import { validateFairpools } from './validators/validateFairpool'
+import { validateTalliesDeltas } from './validators/validateTalliesDeltas'
 
 type N = bigint
 
@@ -33,13 +31,25 @@ export type FintTuple = FintGenTuple<Address, Asset, Amount>
 
 export type Balance = BalanceGen<Address, Amount>
 
+export type BalanceDelta = BalanceGen<Address, Amount>
+
 export type BalanceTuple = BalanceGenTuple<Address, Amount>
+
+export type BalanceDeltaTuple = BalanceGenTuple<Address, Amount>
 
 export type History<T> = T[]
 
 export interface Beneficiary {
   address: Address
   share: N
+}
+
+export interface Share {
+  rootNumerator: N
+  rootReferralNumerator: N
+  rootDiscountNumerator: N
+  referralsMap: Record<Address, Address>
+  isRecognizedReferralMap: Record<Address, boolean>
 }
 
 export interface PrePriceParams {
@@ -64,7 +74,7 @@ export interface Fairpool extends PriceParams, DistributionParams {
   tallies: Balance[] // in quote currency
   quoteSupply: Amount
   scale: N
-  beneficiaries: Beneficiary[]
+  shares: Share[]
   owner: Address
   operator: Address
   holdersPerDistributionMax: N
@@ -91,17 +101,11 @@ export interface AmountsBQ {
   quote: Amount
 }
 
-export interface Context extends PriceParams {
-  arithmetic: Arithmetic<Amount> // TODO: remove backwards compatibility
-  baseAsset: Asset
-  quoteAsset: Asset
-}
-
-const arithmetic = BigIntArithmetic
-const assert = getAssert(arithmetic)
-const halve = $halve(arithmetic)
-const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
-const { addB, subB, mulB, divB, sendB } = getGenMutilatorsWithAmount(arithmetic)
+const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
+const { halve, sum } = BigIntBasicOperations
+const { toQuotients, toBoundedArray, fromNumeratorsToValues } = BigIntQuotientFunctions
+const { addB, subB, mulB, divB, sendB } = getGenMutilatorsWithAmount(BigIntBasicArithmetic)
+const assert = BigIntAllAssertions
 
 export class BaseDeltaMustBeGreaterThanZero extends AssertionFailedError<{ baseDelta: Amount }> {}
 
@@ -185,7 +189,7 @@ export const getQuoteSupplyFor = (baseLimit: N, quoteOffset: N) => (baseSupply: 
 
 export const getQuoteSupplyForF = getFairpoolFun(getQuoteSupplyFor)
 
-export const getQuoteDeltaMin = (baseLimit: N, quoteOffset: N) => getQuoteSupplyFor(baseLimit, quoteOffset)(arithmetic.one)
+export const getQuoteDeltaMin = (baseLimit: N, quoteOffset: N) => getQuoteSupplyFor(baseLimit, quoteOffset)(one)
 
 export const getQuoteDeltaMinF = getFairpoolFun(getQuoteDeltaMin)
 
@@ -199,6 +203,15 @@ export const getQuoteDeltaMinF = getFairpoolFun(getQuoteDeltaMin)
 //   const quoteSupplyNew = add(deltas.quoteDelta)(quoteSupplyCurrent)
 //   return getQuoteDeltaMin(baseLimit, quoteOffset)(baseSupplyNew, quoteSupplyNew)
 // }
+
+type GetRandomNumber = (seed: number) => number
+
+const getRandomNumberTodo: GetRandomNumber = () => todo()
+
+export const getTalliesDeltas = (getRandomNumber: GetRandomNumber) => (shares: Share[]) => (amount: bigint) => {
+  // TODO: find a way to generate a random sublist of holders that is equal to blockchain way
+  return validateTalliesDeltas(todo())
+}
 
 /**
  * NOTE: actual deltas are always less than or equal to expected deltas (because of integer division)
@@ -273,9 +286,8 @@ export const getBaseSupplySuperlinearMinF = getFairpoolFun(getBaseSupplySuperlin
 export const getInitialPrice = (baseLimit: N, quoteOffset: N) => div(quoteOffset, baseLimit)
 
 export const getBaseDeltasFromNumerators = (baseLimit: N, quoteOffset: N) => (baseDeltaMin: N, baseSupplyMax: N) => (numerators: number[]) => {
-  const toQuotientsLocal = toQuotients(arithmetic)
-  const toBoundedArrayLocal = toBoundedArray(arithmetic)(baseDeltaMin, baseSupplyMax)
-  return pipe(numerators.map(num), toQuotientsLocal, toBoundedArrayLocal)
+  const toBoundedArrayLocal = toBoundedArray(baseDeltaMin, baseSupplyMax)
+  return pipe(numerators.map(num), toQuotients, toBoundedArrayLocal)
 }
 
 export const getBaseDeltasFromBaseDeltaNumeratorsSuperlinearSafe = (baseLimit: N, quoteOffset: N) => {
@@ -375,7 +387,15 @@ export const sell = (contract: Address, sender: Address, baseDeltaProposed: N) =
   const { baseLimit, quoteOffset } = fairpool
   const baseSupplyCurrent = getTotalSupply(fairpool.balances)
   const quoteSupplyCurrent = fairpool.quoteSupply
-  const { baseDelta, quoteDelta } = getSellDeltas(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(baseDeltaProposed)
+  const { baseDelta, quoteDelta: quoteDeltaToDistribute } = getSellDeltas(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(baseDeltaProposed)
+  const quoteDelta = quoteDeltaToDistribute
+  // const talliesDeltas = getTalliesDeltas(getRandomNumberTodo)(fairpool.shares)(quoteDeltaToDistribute)
+  // const quoteDistributed = sum(talliesDeltas.map(d => d.amount))
+  // const quoteDelta = quoteDeltaToDistribute - quoteDistributed
+  // talliesDeltas.forEach(tallyDelta => {
+  //   const tally = grabBalance(tallyDelta.address)(fairpool.tallies)
+  //   tally.amount += tallyDelta.amount
+  // })
   const balanceSenderBase = grabBalance(sender)(fairpool.balances)
   const balanceSenderQuote = grabBalance(sender)(blockchain.balances)
   const balanceContractQuote = grabBalance(contract)(blockchain.balances)

@@ -1,5 +1,7 @@
-import { assert } from '../../../utils/bigint.arithmetic'
+import { BigIntAllAssertions } from '../../../utils/bigint.arithmetic'
 import { Balance } from '../uni'
+
+const assert = BigIntAllAssertions
 
 export const validateBalances = (balances: Balance[]) => {
   return balances.map(validateBalance)

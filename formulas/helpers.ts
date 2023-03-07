@@ -1,9 +1,10 @@
 import { pipe } from 'remeda'
-import { sumAmounts } from '../../utils/arithmetic/sum'
-import { BigIntArithmetic } from '../../utils/bigint.arithmetic'
+import { BigIntBasicOperations } from '../../utils/bigint.arithmetic'
 import { ensureFind } from '../../utils/ensure'
 import { Address, Asset, Balance, byAssetWallet, Fairpool, Fint, State } from './uni'
 import { validateBalance } from './validators/validateBalance'
+
+const { sumAmounts } = BigIntBasicOperations
 
 export const getBalancesBQ = (baseAsset: Asset, quoteAsset: Asset) => (wallet: Address) => (balances: Fint[]) => {
   const base = getBalanceR(baseAsset)(wallet)(balances)
@@ -54,7 +55,7 @@ export const getAmountF = (fairpool: Fairpool) => (state: State) => getAmount(fa
 
 export const getAmountR = (asset: Asset) => (wallet: Address) => (fints: Fint[]) => getBalanceR(asset)(wallet)(fints).amount
 
-export const getTotalSupply = sumAmounts(BigIntArithmetic)
+export const getTotalSupply = sumAmounts
 
 export const getTotalSupplyR = (asset: Asset) => (fints: Fint[]) => pipe(fints.filter(b => b.asset === asset), getTotalSupply)
 

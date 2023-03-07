@@ -4,16 +4,10 @@ import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbit
 import { clone, createPipe, last, map, sort, times, zip } from 'remeda'
 import { uint256Max } from '../../bn/constants'
 import { MutatorV } from '../../generic/models/Mutator'
-import { clamp as $clamp, clampIn as $clampIn } from '../../utils/arithmetic/clamp'
-import { getAssert } from '../../utils/arithmetic/getAssert'
-import { getDeltas as $getDeltas } from '../../utils/arithmetic/getDeltas'
-import { getShare as $getShare } from '../../utils/arithmetic/getShare'
-import { halve as $halve } from '../../utils/arithmetic/halve'
-import { isAscending, isAscendingStrict } from '../../utils/arithmetic/order'
-import { sum } from '../../utils/arithmetic/sum'
+import { BigIntArrayComparisons } from '../../utils/arithmetic/order'
 import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
 import { assertByBinary, assertEq } from '../../utils/assert'
-import { BigIntArithmetic } from '../../utils/bigint.arithmetic'
+import { BigIntAllAssertions, BigIntBasicArithmetic, BigIntBasicOperations } from '../../utils/bigint.arithmetic'
 import { dbg, dbgS, debug, inner, input, output } from '../../utils/debug'
 import { ensure } from '../../utils/ensure'
 import { assertPRD } from '../../utils/fast-check/assert'
@@ -25,32 +19,22 @@ import { after } from '../../utils/remeda/wrap'
 import { todo } from '../../utils/todo'
 import { Referral } from '../models/Referral'
 import { PairOfReferralsSortedAscendingByLength } from '../models/Referral/PairOfReferralsSortedAscendingByLength'
-import { fromNumeratorsToValues as $fromNumeratorsToValues } from './arbitraries/fromNumeratorsToValues'
 import { getNumeratorsArb } from './arbitraries/getNumeratorsArb'
-import { toBoundedArray as $toBoundedArray } from './arbitraries/toBoundedArray'
-import { toQuotients as $toQuotients } from './arbitraries/toQuotients'
+import { BigIntQuotientFunctions } from './arbitraries/getQuotientFunctions'
 import { assertBalanceDiffs } from './assertBalanceDiffs'
 import { cleanState } from './clean'
 import { baseLimitMax, baseLimitMin, priceParamMax, priceParamMin, quoteOffsetMax, quoteOffsetMin, quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin, scaleFixed } from './constants'
 import { getAmountD, getAmountsBQ, getBalanceD, getBalancesBQ } from './helpers'
-import { Action, Address, Amount, Balance, BalanceTuple, Beneficiary, Blockchain, buy, Context, DistributionParams, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltaMinF, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, PriceParams, selloff, State } from './uni'
+import { Action, Address, Balance, BalanceDeltaTuple, Beneficiary, Blockchain, buy, DistributionParams, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltaMinF, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, selloff, State } from './uni'
 import { validateFairpool } from './validators/validateFairpool'
 import { validatePricingParams } from './validators/validatePricingParams'
 import { fairpoolZero } from './zero'
 
-const arithmetic = BigIntArithmetic
-const { zero, one, num, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
-const assert = getAssert(arithmetic)
-const halve = $halve(arithmetic)
-const getShare = $getShare(arithmetic)
-const toQuotients = $toQuotients(arithmetic)
-const toBoundedArray = $toBoundedArray(arithmetic)
-const fromNumeratorsToValues = $fromNumeratorsToValues(arithmetic)
-const clamp = $clamp(arithmetic)
-const clampIn = $clampIn(arithmetic)
-const getDeltas = $getDeltas(arithmetic)
-const isAscendingBI = isAscending(BigIntArithmetic)
-const isAscendingStrictBI = isAscendingStrict(BigIntArithmetic)
+const { zero, one, num, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
+const { sum, sumAmounts, halve, clamp, clampIn, getShare, getDeltas } = BigIntBasicOperations
+const { toQuotients, toBoundedArray, fromNumeratorsToValues } = BigIntQuotientFunctions
+const { isAscending, isDescending, isAscendingStrict, isDescendingStrict } = BigIntArrayComparisons
+const assert = BigIntAllAssertions
 const users = ['alice', 'bob', 'sam', 'ted']
 const addresses = ['contract', ...users]
 const assets = ['base', 'quote']
@@ -66,8 +50,6 @@ const getPricingParams = ({ quoteOffsetMultiplierProposed, baseLimit }: PrePrice
     quoteOffset: mul(baseLimit, quoteOffsetMultiplier),
   })
 }
-const getContext = (params: PriceParams): Context => ({ arithmetic, baseAsset: base, quoteAsset: quote, ...params })
-const getStateFromPreState = createPipe(getPricingParams, getContext)
 const getBalances = getBalancesBQ(base, quote)
 const getAmounts = getAmountsBQ(base, quote)
 const clampBaseDeltaRaw = (baseLimit: bigint) => clamp(0n, baseLimit)
@@ -179,7 +161,7 @@ const dbgContextAction = (state: State) => {
 }
 const getBalancesHistoryBaseAlice = createPipe(map(getBalancesBase), map(getBalanceD(alice)))
 const getAmountsHistoryBaseAlice = createPipe(getBalancesHistoryBaseAlice, map((b: Balance) => b.amount))
-const sumAmountsHistoryBaseAlice = createPipe(getAmountsHistoryBaseAlice, sum(arithmetic))
+const sumAmountsHistoryBaseAlice = createPipe(getAmountsHistoryBaseAlice, sum)
 const __filename = get__filename(import.meta.url)
 const run = <Val, Args extends unknown[]>(mutators: MutatorV<Val, Args>[], ...args: Args) => (value: Val) => {
   const mutatorsWithSeparator = mutators.map<MutatorV<Val, Args>>(mutator => (obj, ...args) => {
@@ -200,12 +182,12 @@ const getProfitFromActions = (seller: Address) => (actions: Action[]) => (stateI
   const amountFinal = getAmountLocalD(stateFinal.blockchain.balances)
   return sub(amountFinal, amountInitial)
 }
-const getProfitFromTuples = (tuples: NonEmptyArray<BalanceTuple>) => {
+const getProfitFromTuples = (tuples: NonEmptyArray<BalanceDeltaTuple>) => {
   const seller = tuples[0][0]
   const actions = getActionsLeadingToProfit(tuples)
   return getProfitFromActions(seller)(actions)
 }
-const getActionsLeadingToProfit = (tuples: NonEmptyArray<BalanceTuple>): NonEmptyArray<Action> => {
+const getActionsLeadingToProfit = (tuples: NonEmptyArray<BalanceDeltaTuple>): NonEmptyArray<Action> => {
   const seller = tuples[0][0]
   const buys = tuples.map(([wallet, delta]) => buy(contract, wallet, delta))
   const actions = [
@@ -337,7 +319,7 @@ testFun(async function assertAscendingQuoteDeltasForSameBaseDeltas() {
     const baseDelta = (fairpool.baseLimit - 1n) / BigInt(count)
     const baseDeltasMulti = times(count, () => baseDelta)
     const quoteDeltasMulti = getQuoteDeltasFromBaseDeltasF(fairpool)(baseDeltasMulti)
-    return isAscendingStrictBI(quoteDeltasMulti)
+    return isAscendingStrict(quoteDeltasMulti)
   })
 })
 
@@ -346,7 +328,7 @@ testFun(async function assertSumOfBuysMustBeLteToBuyOfSums() {
     const fairpool = getFairpool(state)
     const baseDeltasMulti = times(count, () => num(1))
     const quoteDeltasMulti = getQuoteDeltasFromBaseDeltasF(fairpool)(baseDeltasMulti)
-    const quoteDeltasSingle = [sum(arithmetic)(quoteDeltasMulti)]
+    const quoteDeltasSingle = [sum(quoteDeltasMulti)]
     const scenarios = [
       quoteDeltasMulti,
       quoteDeltasSingle,
@@ -519,8 +501,12 @@ testFun.skip(async function assertTallyOfSenderIsAlwaysZeroAfterWithdraw() {
 testFun.skip(async function assertQuoteReceivedDoesNotDecreaseIfReferralsArrayIsIncreased() {
   const referralsPairArb = todo<Arbitrary<PairOfReferralsSortedAscendingByLength>>()
   return assertPRD(stateArb, referralsPairArb, async function (state, pairOfReferrals) {
-    const toQuoteReceived = todo<(referrals: Referral[]) => Amount>()
-    const quoteReceived = pairOfReferrals.map(toQuoteReceived)
-    return isAscendingBI(quoteReceived)
+    const getTuplesFromReferrals = todo<(referrals: Referral[]) => NonEmptyArray<BalanceDeltaTuple>>()
+    const getProfits = (referrals: Referral[]) => {
+      const tuples = getTuplesFromReferrals(referrals)
+      return getProfitFromTuples(tuples)(state)
+    }
+    const profits = pairOfReferrals.map(getProfits)
+    return isAscending(profits)
   })
 })

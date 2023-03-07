@@ -1,4 +1,4 @@
-import { Arithmetic } from '../../../utils/arithmetic'
+import { BasicArithmetic } from '../../../utils/arithmetic'
 import { getQuotientOf } from '../../../utils/arithmetic/getQuotientOf'
 import { Quotient } from '../../../utils/arithmetic/Quotient'
 import { assertByBinary } from '../../../utils/assert'
@@ -10,7 +10,7 @@ import { assertByBinary } from '../../../utils/assert'
  *
  * IMPORTANT: the second parameter is valueSumMax, not valueMax
  */
-export const toBoundedArray = <N>(arithmetic: Arithmetic<N>) => (valueMin: N, valueSumMax: N) => (quotients: Quotient<N>[]) => {
+export const toBoundedArray = <N>(arithmetic: BasicArithmetic<N>) => (valueMin: N, valueSumMax: N) => (quotients: Quotient<N>[]) => {
   const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
   const valueSumMin = mul(valueMin, num(quotients.length))
   const valueSumMaxLocal = sub(valueSumMax, valueSumMin)

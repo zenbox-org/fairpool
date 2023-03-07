@@ -1,7 +1,6 @@
 import { uniqWith } from 'remeda'
 import { getFintGenTupleKey } from '../../finance/models/FintGenTuple/getFintGenTupleKey'
-import { getAssert } from '../../utils/arithmetic/getAssert'
-import { BigIntArithmetic } from '../../utils/bigint.arithmetic'
+import { BigIntAllAssertions } from '../../utils/bigint.arithmetic'
 import { isEqualBy } from '../../utils/lodash'
 import { getAmountD } from './helpers'
 import { Address, Amount, Balance, State } from './uni'
@@ -10,8 +9,7 @@ import { Address, Amount, Balance, State } from './uni'
 type BalanceGetter = (state: State) => Balance[]
 type AssertBalanceTuple = [Address, BalanceGetter, Amount]
 
-const arithmetic = BigIntArithmetic
-const assert = getAssert(arithmetic)
+const assert = BigIntAllAssertions
 
 export const assertBalanceDiffs = (stateOld: State) => (tuples: AssertBalanceTuple[]) => {
   const uniques = uniqWith(tuples, isEqualBy(getFintGenTupleKey))
