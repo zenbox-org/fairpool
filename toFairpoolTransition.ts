@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z, ZodNumber } from 'zod'
 import { ZodRawShape, ZodTypeAny } from 'zod/lib/types'
 import { UnknownKeysParam, ZodObjectStd } from '../utils/zod/types'
 import { isError } from './api/models/Error'
@@ -7,7 +7,7 @@ import { parseState, State } from './api/models/State'
 
 // <Output, Def extends ZodTypeDef = ZodTypeDef, Input = Output>(ParamsSchema: ZodType<Output, Def, Input>) => (getNewState: (params: z.infer<typeof ParamsSchema>)
 
-export const toFairpoolTransition = <T extends ZodRawShape, UnknownKeys extends UnknownKeysParam = 'strip', Catchall extends ZodTypeAny = ZodTypeAny>(ParamsSchema: ZodObjectStd<T, UnknownKeys, Catchall>) => (getNewState: (params: z.infer<typeof ParamsSchema>) => (state: State) => Promise<State>) => {
+export const toFairpoolTransition = <T extends ZodRawShape & { sessionId: ZodNumber }, UnknownKeys extends UnknownKeysParam = 'strip', Catchall extends ZodTypeAny = ZodTypeAny>(ParamsSchema: ZodObjectStd<T, UnknownKeys, Catchall>) => (getNewState: (params: z.infer<typeof ParamsSchema>) => (state: State) => Promise<State>) => {
   // NOTE: clone(state) must be called in runTransitions
   return ($params: z.infer<typeof ParamsSchema>) => async (state: State): Promise<State> => {
     const paramsParsed = ParamsSchema.parse($params)

@@ -1,7 +1,7 @@
 import { BasicArithmetic } from '../../../utils/arithmetic'
-import { getQuotientOf } from '../../../utils/arithmetic/getQuotientOf'
-import { Quotient } from '../../../utils/arithmetic/Quotient'
 import { assertByBinary } from '../../../utils/assert'
+import { Quotient } from '../../../utils/Quotient'
+import { getQuotientOf } from '../../../utils/Quotient.utils'
 
 /**
  * Produces an array of values where:
