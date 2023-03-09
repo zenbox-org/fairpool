@@ -1,5 +1,5 @@
 import { BasicArithmetic } from '../../../utils/arithmetic'
-import { BigIntBasicArithmetic } from '../../../utils/bigint.arithmetic'
+import { BigIntBasicArithmetic } from '../../../utils/bigint/arithmetic'
 import { fromNumeratorsToValues } from './fromNumeratorsToValues'
 import { toBoundedArray } from './toBoundedArray'
 import { toQuotients } from './toQuotients'

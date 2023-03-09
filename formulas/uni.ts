@@ -5,7 +5,7 @@ import { FintGen, FintGenTuple } from '../../finance/models/FintGen'
 import { getGenMutilatorsWithAmount } from '../../finance/models/FintGen/getGenMutilatorsWithAmount'
 import { toFintGenTuple } from '../../finance/models/FintGen/toFintGenTuple'
 import { Mutator } from '../../generic/models/Mutator'
-import { BigIntAllAssertions, BigIntBasicArithmetic, BigIntBasicOperations } from '../../utils/bigint.arithmetic'
+import { BigIntAllAssertions, BigIntBasicArithmetic, BigIntBasicOperations } from '../../utils/bigint/arithmetic'
 import { inner, input, output } from '../../utils/debug'
 import { ensureByIndex, ensureFind, getFinder } from '../../utils/ensure'
 import { AssertionFailedError } from '../../utils/error'
@@ -52,6 +52,26 @@ export interface Share {
   isRecognizedReferralMap: Record<Address, boolean>
 }
 
+export type TalliesDelta = BalanceDelta
+
+export interface GetTalliesDeltaParams {
+  offset: bigint
+  step: bigint
+}
+
+// export type GetTalliesDeltasHierarchical = (context: GetTalliesDeltaParams) => (fairpool: Fairpool) => (quoteDistributed: bigint) => TalliesDelta[]
+
+// export type GetRecipients = (context: GetTalliesDeltaParams) => (fairpool: Fairpool) => Address[]
+
+// export interface ShareHierarchical {
+//   quotient: QuotientGen<bigint>
+//   children: ShareHierarchical[]
+//   getRecipients: GetRecipients
+//   getTalliesDeltas: GetTalliesDeltasHierarchical
+//   referralsMap: Record<Address, Address>
+//   isRecognizedReferralMap: Record<Address, boolean>
+// }
+
 export interface PrePriceParams {
   baseLimit: N
   quoteOffsetMultiplierProposed: N
@@ -74,6 +94,7 @@ export interface Fairpool extends PriceParams, DistributionParams {
   tallies: Balance[] // in quote currency
   quoteSupply: Amount
   scale: N
+  seed: N
   shares: Share[]
   owner: Address
   operator: Address

@@ -1,12 +1,13 @@
 import { writeFile } from 'fs/promises'
 import { ZeroAddress } from '../../ethereum/data/allAddresses'
 import { getGenMutilatorsWithAmount } from '../../finance/models/FintGen/getGenMutilatorsWithAmount'
-import { BigIntAllAssertions, BigIntBasicArithmetic, BigIntBasicOperations } from '../../utils/bigint.arithmetic'
+import { BigIntAllAssertions, BigIntBasicArithmetic, BigIntBasicOperations } from '../../utils/bigint/arithmetic'
 import { isLogEnabled } from '../../utils/debug'
+import { parseQuotientGenBigInt } from '../../utils/Quotient'
 import { BigIntQuotientFunctions } from './arbitraries/getQuotientFunctions'
 import { baseLimitMin, holdersPerDistributionMaxFixed, quoteOffsetMin, scaleFixed } from './constants'
 import { getExperimentOutputMin } from './experiments'
-import { Fairpool } from './uni'
+import { Balance, Blockchain, Fairpool } from './uni'
 import { validateBalance } from './validators/validateBalance'
 import { validateFairpool } from './validators/validateFairpool'
 import { validatePricingParams } from './validators/validatePricingParams'
@@ -16,7 +17,9 @@ const { halve, sum, getShare } = BigIntBasicOperations
 const { toQuotients, toBoundedArray, fromNumeratorsToValues } = BigIntQuotientFunctions
 const { addB, subB, mulB, divB, sendB } = getGenMutilatorsWithAmount(BigIntBasicArithmetic)
 const assert = BigIntAllAssertions
-const getPercentOfScale = (numerator: bigint) => getShare(100n)(numerator)(scaleFixed)
+const getPercentOfScale = (numerator: bigint, denominator = 100n) => getShare(denominator)(numerator)(scaleFixed)
+const getScaledQuotient = (numerator: bigint) => parseQuotientGenBigInt({ numerator, denominator: scaleFixed })
+const getPercentScaledQuotient = (numerator: bigint, denominator = 100n) => parseQuotientGenBigInt({ numerator: getPercentOfScale(numerator, denominator), denominator: scaleFixed })
 
 if (isLogEnabled) await writeFile('/tmp/stats', getExperimentOutputMin())
 
@@ -46,6 +49,7 @@ export const fairpoolZero: Fairpool = validateFairpool([])({
     // },
   ],
   scale: scaleFixed,
+  seed: 0n,
   owner: ZeroAddress,
   operator: ZeroAddress,
   royalties: 0n,
@@ -53,3 +57,36 @@ export const fairpoolZero: Fairpool = validateFairpool([])({
   fees: 0n,
   holdersPerDistributionMax: holdersPerDistributionMaxFixed,
 })
+
+assert.eq(getPercentScaledQuotient(25n, 1000n).numerator, 25000n, 'getPercentScaledQuotient(10n).numerator', '100000n')
+
+export const balancesZero: Balance[] = []
+
+export const blockchainZero: Blockchain = {
+  balances: balancesZero,
+}
+
+// const getTalliesDeltasWithReferrals: GetTalliesDeltasHierarchical = todo()
+
+// const getSharesDefault = (marketerShare: Partial<ShareHierarchical>, developerShare: Partial<ShareHierarchical> & Pick<ShareHierarchical, 'recipient'>): ShareHierarchical[] => [
+//   {
+//     quotient: getPercentScaledQuotient(10n),
+//     recipient: ZeroAddress,
+//     referralsMap: {},
+//     isRecognizedReferralMap: {},
+//     getTalliesDeltas: getTalliesDeltasHolders,
+//   },
+//   {
+//     quotient: getPercentScaledQuotient(7n),
+//     referralsMap: {},
+//     isRecognizedReferralMap: {},
+//     getTalliesDeltas: getTalliesDeltasWithReferrals,
+//   },
+//   {
+//     quotient: getPercentScaledQuotient(25n, 1000n),
+//     referralsMap: {},
+//     isRecognizedReferralMap: {},
+//     getTalliesDeltas: todo(),
+//     ...developerShare,
+//   },
+// ]

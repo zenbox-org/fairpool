@@ -1,4 +1,4 @@
-import { BigIntAllAssertions } from '../../../utils/bigint.arithmetic'
+import { BigIntAllAssertions } from '../../../utils/bigint/arithmetic'
 import { Balance } from '../uni'
 
 const assert = BigIntAllAssertions

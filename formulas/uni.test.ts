@@ -1,13 +1,12 @@
 import { test } from '@jest/globals'
-import { array, bigInt, constant, constantFrom, integer, record, tuple } from 'fast-check'
+import { record } from 'fast-check'
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
 import { clone, createPipe, last, map, sort, times, zip } from 'remeda'
-import { uint256Max } from '../../bn/constants'
 import { MutatorV } from '../../generic/models/Mutator'
 import { BigIntArrayComparisons } from '../../utils/arithmetic/order'
 import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
 import { assertByBinary, assertEq } from '../../utils/assert'
-import { BigIntAllAssertions, BigIntBasicArithmetic, BigIntBasicOperations } from '../../utils/bigint.arithmetic'
+import { BigIntAllAssertions, BigIntBasicArithmetic, BigIntBasicOperations } from '../../utils/bigint/arithmetic'
 import { dbg, dbgS, debug, inner, input, output } from '../../utils/debug'
 import { ensure } from '../../utils/ensure'
 import { assertPRD } from '../../utils/fast-check/assert'
@@ -19,16 +18,20 @@ import { after } from '../../utils/remeda/wrap'
 import { todo } from '../../utils/todo'
 import { Referral } from '../models/Referral'
 import { PairOfReferralsSortedAscendingByLength } from '../models/Referral/PairOfReferralsSortedAscendingByLength'
+import { countArb } from './arbitraries/countArb'
 import { getNumeratorsArb } from './arbitraries/getNumeratorsArb'
 import { BigIntQuotientFunctions } from './arbitraries/getQuotientFunctions'
+import { getStateArb } from './arbitraries/getStateArb'
+import { priceParamsArb } from './arbitraries/priceParamsArb'
+import { uint256Arb } from './arbitraries/uint256Arb'
 import { assertBalanceDiffs } from './assertBalanceDiffs'
 import { cleanState } from './clean'
-import { baseLimitMax, baseLimitMin, priceParamMax, priceParamMin, quoteOffsetMax, quoteOffsetMin, quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin, scaleFixed } from './constants'
+import { quoteOffsetMin, quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin, scaleFixed } from './constants'
 import { getAmountD, getAmountsBQ, getBalanceD, getBalancesBQ } from './helpers'
-import { Action, Address, Balance, BalanceDeltaTuple, Beneficiary, Blockchain, buy, DistributionParams, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltaMinF, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, selloff, State } from './uni'
+import { Action, Address, Balance, BalanceDeltaTuple, buy, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltaMinF, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, selloff, State } from './uni'
 import { validateFairpool } from './validators/validateFairpool'
 import { validatePricingParams } from './validators/validatePricingParams'
-import { fairpoolZero } from './zero'
+import { balancesZero, blockchainZero, fairpoolZero } from './zero'
 
 const { zero, one, num, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
 const { sum, sumAmounts, halve, clamp, clampIn, getShare, getDeltas } = BigIntBasicOperations
@@ -52,20 +55,10 @@ const getPricingParams = ({ quoteOffsetMultiplierProposed, baseLimit }: PrePrice
 }
 const getBalances = getBalancesBQ(base, quote)
 const getAmounts = getAmountsBQ(base, quote)
-const clampBaseDeltaRaw = (baseLimit: bigint) => clamp(0n, baseLimit)
-const clampBaseDeltaRawByState = (state: State) => clampBaseDeltaRaw(getFairpool(state).baseLimit)
 
-const baseLimitConstraints = { min: baseLimitMin, max: baseLimitMax }
-const quoteOffsetConstraints = { min: quoteOffsetMin, max: quoteOffsetMax }
-const priceParamConstraints = { min: priceParamMin, max: priceParamMax }
-const quoteOffsetMultiplierConstraints = { min: quoteOffsetMultiplierMin }
-const genericMultiplierConstraints = { min: 1n, max: uint256Max.toBigInt() /* should actually be smaller, but we don't know in advance */ }
-const increasingMultiplierConstraints = { ...genericMultiplierConstraints, min: 2n }
-
-const balancesDefault: Balance[] = []
 const getShareScaledDefault = getShare(scaleFixed)
 const getShareScaledDefaultPips = getShareScaledDefault(num(10000))
-const fairpoolDefault: Fairpool = validateFairpool(balancesDefault)({
+const fairpoolDefault: Fairpool = validateFairpool(balancesZero)({
   ...fairpoolZero,
   quoteOffset: 2n * quoteOffsetMin,
   address: contract,
@@ -78,76 +71,13 @@ const fairpoolDefault: Fairpool = validateFairpool(balancesDefault)({
   fees: getShareScaledDefaultPips(num(2500)),
   holdersPerDistributionMax: num(256),
 })
-const blockchainDefault: Blockchain = {
-  balances: balancesDefault,
-}
 const stateDefault: State = {
-  blockchain: blockchainDefault,
+  blockchain: blockchainZero,
   fairpools: [fairpoolDefault],
 }
 const quoteDeltaDefault = getQuoteDeltaMinF(fairpoolDefault)
 
-const baseLimitArb = bigInt(baseLimitConstraints)
-const quoteOffsetArb = bigInt(quoteOffsetConstraints)
-const baseDeltaRawArb = bigInt({ min: 1n, max: baseLimitMax - 1n })
-const countArb = integer({ min: 1, max: 100 })
-// const quoteOffsetMultiplierProposedArb = bigInt(quoteOffsetMultiplierConstraints)
-// const prePricingParamsArb = record<PrePricingParams>({
-//   quoteOffsetMultiplierProposed: quoteOffsetMultiplierProposedArb,
-//   baseLimit: baseLimitArb,
-// })
-const toSortedBaseLimitQuoteOffset = sort<bigint>(compareNumerals)
-const priceParamArb = bigInt(priceParamConstraints)
-const priceParamsArb = tuple(priceParamArb, priceParamArb).map(toSortedBaseLimitQuoteOffset).map(([baseLimit, quoteOffset]) => ({ baseLimit, quoteOffset }))
-const uint256Arb = bigInt({ min: 0n, max: uint256Max.toBigInt() })
-
-const supplyStatArb = record({
-  params: priceParamsArb,
-  supply: uint256Arb,
-}).map(({ params: { baseLimit, quoteOffset }, supply }) => ({
-  baseLimit,
-  quoteOffset,
-  supply: clampBaseDeltaRaw(baseLimit)(supply),
-}))
-const getScaledValuesArb = (length: number) => getNumeratorsArb(length, 0).map(fromNumeratorsToValues(0n, scaleFixed))
-const getBeneficiariesArb = (addresses: Address[]): Arbitrary<Beneficiary[]> => {
-  return getScaledValuesArb(addresses.length).map(shares => {
-    return zip(addresses, shares).map(([address, share]) => ({ address, share }))
-  })
-}
-const distributionParamsArb: Arbitrary<DistributionParams> = getScaledValuesArb(4).map(distributionParams => ({
-  royalties: distributionParams[0],
-  earnings: distributionParams[1],
-  fees: distributionParams[2],
-  // distributionParams[4] is intentionally unused, so that the total sum may be less than scaleFixed
-}))
-const fairpoolArb = (users: Address[]) => record({
-  priceParams: priceParamsArb,
-  beneficiaries: getBeneficiariesArb(users),
-  owner: constantFrom(...users),
-  operator: constantFrom(...users),
-  distributionParams: distributionParamsArb,
-}).map(fairpool => ({
-  ...fairpoolZero,
-  ...fairpool,
-  address: contract,
-  ...fairpool.priceParams,
-  ...fairpool.distributionParams,
-}))
-const getStateArb = (users: Address[]) => record<State>({
-  fairpools: array(fairpoolArb(users), { minLength: 1, maxLength: 1 }),
-  blockchain: constant(blockchainDefault),
-})
-const stateArb = getStateArb(users)
-
-const stateWithBaseDeltaArb = record({
-  state: stateArb,
-  baseDeltaRaw: baseDeltaRawArb,
-}).map(({ state, baseDeltaRaw }) => ({
-  state,
-  baseDelta: clampBaseDeltaRawByState(state)(baseDeltaRaw),
-}))
-const increasingMultiplierArb = bigInt(increasingMultiplierConstraints)
+export const stateArb = getStateArb(contract, users)
 
 const getBalancesStats = (state: State) => getBalancesLocalD([alice, bob])(getFairpool(state), state.blockchain)
 const dbgBalancesStatsAction = (state: State) => {

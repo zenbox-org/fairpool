@@ -1,7 +1,7 @@
-import { toFrontendAmountBND } from '../../../../utils/BigNumber.convert'
 import { BN } from '../../../../bn'
-import { SellParams } from '../SellParams'
+import { toFrontendAmountBND } from '../../../../utils/BigNumber/conversions'
 import { SellFormValues } from '../SellFormValues'
+import { SellParams } from '../SellParams'
 
 export const fromSellParamsToSellFormValues = (baseDecimals: BN, quoteDecimals: BN) => (input: SellParams): SellFormValues => ({
   baseDeltaProposed: toFrontendAmountBND(baseDecimals)(input.baseDeltaProposed).toString(),

@@ -1,5 +1,5 @@
 import { pipe } from 'remeda'
-import { BigIntBasicOperations } from '../../utils/bigint.arithmetic'
+import { BigIntBasicOperations } from '../../utils/bigint/arithmetic'
 import { baseLimitMin, quoteOffsetMin } from './constants'
 import { getSupplyInfo, toStringSupplyInfo } from './stats/getSupplyInfo'
 

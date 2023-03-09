@@ -1,7 +1,7 @@
 import { BasicArithmetic } from '../../../utils/arithmetic'
 import { assertByBinary } from '../../../utils/assert'
-import { Quotient } from '../../../utils/Quotient'
-import { getQuotientOf } from '../../../utils/Quotient.utils'
+import { QuotientGen } from '../../../utils/Quotient'
+import { getQuotientOf } from '../../../utils/Quotient/utils'
 
 /**
  * Produces an array of values where:
@@ -10,7 +10,7 @@ import { getQuotientOf } from '../../../utils/Quotient.utils'
  *
  * IMPORTANT: the second parameter is valueSumMax, not valueMax
  */
-export const toBoundedArray = <N>(arithmetic: BasicArithmetic<N>) => (valueMin: N, valueSumMax: N) => (quotients: Quotient<N>[]) => {
+export const toBoundedArray = <N>(arithmetic: BasicArithmetic<N>) => (valueMin: N, valueSumMax: N) => (quotients: QuotientGen<N>[]) => {
   const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = arithmetic
   const valueSumMin = mul(valueMin, num(quotients.length))
   const valueSumMaxLocal = sub(valueSumMax, valueSumMin)

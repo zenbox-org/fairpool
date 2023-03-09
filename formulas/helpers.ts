@@ -1,5 +1,5 @@
 import { pipe } from 'remeda'
-import { BigIntBasicOperations } from '../../utils/bigint.arithmetic'
+import { BigIntBasicOperations } from '../../utils/bigint/arithmetic'
 import { ensureFind } from '../../utils/ensure'
 import { Address, Asset, Balance, byAssetWallet, Fairpool, Fint, State } from './uni'
 import { validateBalance } from './validators/validateBalance'

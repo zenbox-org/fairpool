@@ -1,9 +1,9 @@
-import { toBackendAmountBND } from '../../../../utils/BigNumber.convert'
-import { bn } from '../../../../bn/utils'
 import { BN } from '../../../../bn'
+import { bn } from '../../../../bn/utils'
+import { toBackendAmountBND } from '../../../../utils/BigNumber/conversions'
+import { num } from '../../../../utils/BigNumber/utils'
 import { SellFormValues } from '../SellFormValues'
 import { SellParams } from '../SellParams'
-import { num } from '../../../../utils/BigNumber.utils'
 
 export const fromSellFormValuesToSellParams = (baseDecimals: BN, quoteDecimals: BN) => (input: SellFormValues): SellParams => ({
   baseDeltaProposed: toBackendAmountBND(baseDecimals)(num(input.baseDeltaProposed)),

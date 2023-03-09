@@ -1,9 +1,9 @@
-import { renderSharePercent, renderWeightAsPower } from '../models/TokenParams/renderTokenParams'
-import { toRenderedAmountBNS } from '../../utils/BigNumber.convert'
+import { TFunction } from 'next-i18next'
+import { toRenderedAmountBNS } from '../../utils/BigNumber/conversions'
 import { SlopeScale } from '../constants'
 import { TokenFieldInfo } from '../models/TokenFieldInfo'
 import { TokenParams } from '../models/TokenParams'
-import { TFunction } from 'next-i18next'
+import { renderSharePercent, renderWeightAsPower } from '../models/TokenParams/renderTokenParams'
 
 export const allTokenFieldInfos: TokenFieldInfo[] = [
   {

@@ -1,4 +1,4 @@
-import { assert, BigIntBasicArithmetic, BigIntBasicOperations } from '../../../utils/bigint.arithmetic'
+import { assert, BigIntBasicArithmetic, BigIntBasicOperations } from '../../../utils/bigint/arithmetic'
 import { every } from '../../../utils/remeda/every'
 import { Share } from '../uni'
 
