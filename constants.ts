@@ -29,3 +29,5 @@ export const ShareScale = bn(10).pow(ShareDecimals)
 export const DefaultBaseLimit = bn(1000)
 
 export const DefaultQuoteOffset = bn(2000)
+
+export const DefaultPrecision = BaseDecimals
