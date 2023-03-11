@@ -1,5 +1,5 @@
 import { test } from '@jest/globals'
-import { record } from 'fast-check'
+import { asyncModelRun, record } from 'fast-check'
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
 import { clone, createPipe, last, map, sort, times, zip } from 'remeda'
 import { MutatorV } from '../../generic/models/Mutator'
@@ -19,6 +19,7 @@ import { after } from '../../utils/remeda/wrap'
 import { todo } from '../../utils/todo'
 import { Referral } from '../models/Referral'
 import { PairOfReferralsSortedAscendingByLength } from '../models/Referral/PairOfReferralsSortedAscendingByLength'
+import { commandsArb } from './arbitraries/commandsArb'
 import { countArb } from './arbitraries/countArb'
 import { getNumeratorsArb } from './arbitraries/getNumeratorsArb'
 import { getStateZeroSharesArb } from './arbitraries/getStateZeroSharesArb'
@@ -413,5 +414,13 @@ testFun.skip(async function assertQuoteReceivedDoesNotDecreaseIfReferralsArrayIs
     }
     const profits = pairOfReferrals.map(getProfits)
     return isAscending(profits)
+  })
+})
+
+testFun.skip(async function assertNoDeadlock() {
+  return assertPRD(stateArb, commandsArb(usersDefault), async function (state, commands) {
+    const real = todo()
+    const model = state
+    await asyncModelRun(() => ({ model, real }), commands)
   })
 })
