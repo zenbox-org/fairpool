@@ -1,12 +1,13 @@
 import { writeFile } from 'fs/promises'
 import { ZeroAddress } from '../../ethereum/data/allAddresses'
 import { getGenMutilatorsWithAmount } from '../../finance/models/FintGen/getGenMutilatorsWithAmount'
-import { BigIntAllAssertions, BigIntBasicArithmetic, BigIntBasicOperations } from '../../utils/bigint/arithmetic'
+import { BigIntAllAssertions, BigIntBasicArithmetic } from '../../utils/bigint/BigIntBasicArithmetic'
+import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
 import { isLogEnabled } from '../../utils/debug'
 import { parseQuotientGenBigInt } from '../../utils/Quotient'
-import { BigIntQuotientFunctions } from './arbitraries/getQuotientFunctions'
 import { baseLimitMin, holdersPerDistributionMaxFixed, quoteOffsetMin, scaleFixed } from './constants'
 import { getExperimentOutputMin } from './experiments'
+import { BigIntQuotientFunctions } from './models/bigint/BigIntQuotientFunctions'
 import { Balance, Blockchain, Fairpool } from './uni'
 import { validateBalance } from './validators/validateBalance'
 import { validateFairpool } from './validators/validateFairpool'
@@ -14,7 +15,7 @@ import { validatePricingParams } from './validators/validatePricingParams'
 
 const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
 const { halve, sum, getShare } = BigIntBasicOperations
-const { toQuotients, toBoundedArray, fromNumeratorsToValues } = BigIntQuotientFunctions
+const { getQuotientsFromNumberNumerators, getBoundedArrayFromQuotients, getValuesFromNumerators } = BigIntQuotientFunctions
 const { addB, subB, mulB, divB, sendB } = getGenMutilatorsWithAmount(BigIntBasicArithmetic)
 const assert = BigIntAllAssertions
 const getPercentOfScale = (numerator: bigint, denominator = 100n) => getShare(denominator)(numerator)(scaleFixed)

@@ -1,7 +1,8 @@
-import { getTalliesDeltasFromRecipientConfig } from '../models/GetTalliesDeltaConfig'
-import { Fairpool, GetTalliesDeltaParams, TalliesDelta } from '../uni'
+import { GetTalliesDeltasFromRecipientConfig } from '../models/GetTalliesDeltaConfig'
+import { TalliesDelta } from '../models/TalliesDelta'
+import { Address, Fairpool, GetTalliesDeltaParams } from '../uni'
 
-export const getTalliesDeltasFromRecipient = (config: getTalliesDeltasFromRecipientConfig) => (fairpool: Fairpool, params: GetTalliesDeltaParams) => (quoteDistributed: bigint): TalliesDelta[] => {
+export const getTalliesDeltasFromRecipient = (config: GetTalliesDeltasFromRecipientConfig) => (fairpool: Fairpool, sender: Address, params: GetTalliesDeltaParams) => (quoteDistributed: bigint): TalliesDelta[] => {
   return [{
     address: config.address,
     amount: quoteDistributed,

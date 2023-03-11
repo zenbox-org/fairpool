@@ -1,9 +1,10 @@
-import { BigIntBasicArithmetic, BigIntBasicOperations } from '../../../utils/bigint/arithmetic'
+import { BigIntBasicArithmetic } from '../../../utils/bigint/BigIntBasicArithmetic'
+import { BigIntBasicOperations } from '../../../utils/bigint/BigIntBasicOperations'
 import { fromBigIntToNumber } from '../../../utils/bigint/fromBigIntToNumber'
 import { rangeBigInt } from '../../../utils/remeda/rangeBigInt'
 import { getTotalSupply } from '../helpers'
-import { GetTalliesDeltaFromHoldersConfig } from '../models/GetTalliesDeltaConfig'
-import { Fairpool, GetTalliesDeltaParams } from '../uni'
+import { GetTalliesDeltasFromHoldersConfig } from '../models/GetTalliesDeltaConfig'
+import { Address, Fairpool, GetTalliesDeltaParams } from '../uni'
 
 const { mod } = BigIntBasicArithmetic
 const { clampIn, getShare } = BigIntBasicOperations
@@ -11,7 +12,7 @@ const { clampIn, getShare } = BigIntBasicOperations
 // const offset = c.getRandomNumber(Number(fairpool.seed))
 // const step = c.getRandomNumber(Number(fairpool.seed))
 
-export const getTalliesDeltasFromHolders = (config: GetTalliesDeltaFromHoldersConfig) => (fairpool: Fairpool, params: GetTalliesDeltaParams) => (quoteDistributed: bigint) => {
+export const getTalliesDeltasFromHolders = (config: GetTalliesDeltasFromHoldersConfig) => (fairpool: Fairpool, sender: Address, params: GetTalliesDeltaParams) => (quoteDistributed: bigint) => {
   const { balances, holdersPerDistributionMax } = fairpool
   const { offset, step } = params
   const length = BigInt(balances.length)

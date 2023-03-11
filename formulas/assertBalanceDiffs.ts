@@ -1,6 +1,6 @@
 import { uniqWith } from 'remeda'
 import { getFintGenTupleKey } from '../../finance/models/FintGenTuple/getFintGenTupleKey'
-import { BigIntAllAssertions } from '../../utils/bigint/arithmetic'
+import { BigIntAllAssertions } from '../../utils/bigint/BigIntBasicArithmetic'
 import { isEqualBy } from '../../utils/lodash'
 import { getAmountD } from './helpers'
 import { Address, Amount, Balance, State } from './uni'

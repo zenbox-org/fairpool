@@ -1,4 +1,4 @@
-import { assert } from '../../../utils/bigint/arithmetic'
+import { assert } from '../../../utils/bigint/BigIntBasicArithmetic'
 import { baseLimitMax, baseLimitMin, quoteOffsetMax, quoteOffsetMin } from '../constants'
 import { PriceParams } from '../uni'
 

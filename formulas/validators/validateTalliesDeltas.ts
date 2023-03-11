@@ -1,4 +1,5 @@
-import { assert, BigIntBasicArithmetic, BigIntBasicOperations } from '../../../utils/bigint/arithmetic'
+import { assert, BigIntBasicArithmetic } from '../../../utils/bigint/BigIntBasicArithmetic'
+import { BigIntBasicOperations } from '../../../utils/bigint/BigIntBasicOperations'
 import { BalanceDelta } from '../uni'
 
 const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic

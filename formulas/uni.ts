@@ -5,17 +5,21 @@ import { FintGen, FintGenTuple } from '../../finance/models/FintGen'
 import { getGenMutilatorsWithAmount } from '../../finance/models/FintGen/getGenMutilatorsWithAmount'
 import { toFintGenTuple } from '../../finance/models/FintGen/toFintGenTuple'
 import { Mutator } from '../../generic/models/Mutator'
-import { BigIntAllAssertions, BigIntBasicArithmetic, BigIntBasicOperations } from '../../utils/bigint/arithmetic'
+import { BigIntAllAssertions, BigIntBasicArithmetic } from '../../utils/bigint/BigIntBasicArithmetic'
+import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
 import { inner, input, output } from '../../utils/debug'
 import { ensureByIndex, ensureFind, getFinder } from '../../utils/ensure'
 import { AssertionFailedError } from '../../utils/error'
 import { get__filename } from '../../utils/node'
+import { Quotient } from '../../utils/Quotient'
 import { meldWithLast } from '../../utils/remeda/meldWithLast'
 import { todo } from '../../utils/todo'
-import { BigIntQuotientFunctions } from './arbitraries/getQuotientFunctions'
 import { getAmount, getBalanceD, getTotalSupply, grabBalance } from './helpers'
+import { getTalliesDeltasFromHieroShares } from './helpers/getTalliesDeltasFromHieroShares'
+import { BigIntQuotientFunctions, getQuotientsFromNumerators } from './models/bigint/BigIntQuotientFunctions'
+import { GetTalliesDeltasFromRecipientConfig } from './models/GetTalliesDeltaConfig'
+import { HieroShare, validateHieroShare } from './models/HieroShare'
 import { validateFairpools } from './validators/validateFairpool'
-import { validateTalliesDeltas } from './validators/validateTalliesDeltas'
 
 type N = bigint
 
@@ -51,8 +55,6 @@ export interface Share {
   referralsMap: Record<Address, Address>
   isRecognizedReferralMap: Record<Address, boolean>
 }
-
-export type TalliesDelta = BalanceDelta
 
 export interface GetTalliesDeltaParams {
   offset: bigint
@@ -95,7 +97,7 @@ export interface Fairpool extends PriceParams, DistributionParams {
   quoteSupply: Amount
   scale: N
   seed: N
-  shares: Share[]
+  shares: HieroShare[]
   owner: Address
   operator: Address
   holdersPerDistributionMax: N
@@ -123,8 +125,8 @@ export interface AmountsBQ {
 }
 
 const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
-const { halve, sum } = BigIntBasicOperations
-const { toQuotients, toBoundedArray, fromNumeratorsToValues } = BigIntQuotientFunctions
+const { halve, sum, sumAmounts } = BigIntBasicOperations
+const { getQuotientsFromNumberNumerators, getBoundedArrayFromQuotients, getValuesFromNumerators } = BigIntQuotientFunctions
 const { addB, subB, mulB, divB, sendB } = getGenMutilatorsWithAmount(BigIntBasicArithmetic)
 const assert = BigIntAllAssertions
 
@@ -229,10 +231,10 @@ type GetRandomNumber = (seed: number) => number
 
 const getRandomNumberTodo: GetRandomNumber = () => todo()
 
-export const getTalliesDeltas = (getRandomNumber: GetRandomNumber) => (shares: Share[]) => (amount: bigint) => {
-  // TODO: find a way to generate a random sublist of holders that is equal to blockchain way
-  return validateTalliesDeltas(todo())
-}
+// export const getTalliesDeltas = (getRandomNumber: GetRandomNumber) => (shares: Share[]) => (amount: bigint) => {
+//   // TODO: find a way to generate a random sublist of holders that is equal to blockchain way
+//   return validateTalliesDeltas(todo())
+// }
 
 /**
  * NOTE: actual deltas are always less than or equal to expected deltas (because of integer division)
@@ -307,8 +309,8 @@ export const getBaseSupplySuperlinearMinF = getFairpoolFun(getBaseSupplySuperlin
 export const getInitialPrice = (baseLimit: N, quoteOffset: N) => div(quoteOffset, baseLimit)
 
 export const getBaseDeltasFromNumerators = (baseLimit: N, quoteOffset: N) => (baseDeltaMin: N, baseSupplyMax: N) => (numerators: number[]) => {
-  const toBoundedArrayLocal = toBoundedArray(baseDeltaMin, baseSupplyMax)
-  return pipe(numerators.map(num), toQuotients, toBoundedArrayLocal)
+  const toBoundedArrayLocal = getBoundedArrayFromQuotients(baseDeltaMin, baseSupplyMax)
+  return pipe(numerators.map(num), getQuotientsFromNumerators, toBoundedArrayLocal)
 }
 
 export const getBaseDeltasFromBaseDeltaNumeratorsSuperlinearSafe = (baseLimit: N, quoteOffset: N) => {
@@ -396,10 +398,24 @@ export const buy = (contract: Address, sender: Address, quoteDeltaProposed: Amou
   const balanceSenderBase = grabBalance(sender)(fairpool.balances)
   const balanceSenderQuote = grabBalance(sender)(blockchain.balances)
   const balanceContractQuote = grabBalance(contract)(blockchain.balances)
-  fairpool.quoteSupply += quoteDelta
-  sendB(quoteDelta)(balanceSenderQuote, balanceContractQuote)
   addB(baseDelta)(balanceSenderBase)
+  sendB(quoteDelta)(balanceSenderQuote, balanceContractQuote)
+  fairpool.quoteSupply += quoteDelta
   return validateState(state)
+})
+
+const total: Quotient<bigint> = { numerator: 1n, denominator: 1n }
+
+/**
+ * Wrap the fairpool.shares in a sender share (100%) to reuse the distribution code
+ */
+const getSenderHieroShare = (shares: HieroShare[]) => (sender: Address) => validateHieroShare({
+  getTalliesDeltaConfig: {
+    type: 'GetTalliesDeltasFromRecipientConfig',
+    address: sender,
+  },
+  quotient: total,
+  children: shares,
 })
 
 export const sell = (contract: Address, sender: Address, baseDeltaProposed: N) => asSafeMutator((state: State) => {
@@ -408,21 +424,24 @@ export const sell = (contract: Address, sender: Address, baseDeltaProposed: N) =
   const { baseLimit, quoteOffset } = fairpool
   const baseSupplyCurrent = getTotalSupply(fairpool.balances)
   const quoteSupplyCurrent = fairpool.quoteSupply
-  const { baseDelta, quoteDelta: quoteDeltaToDistribute } = getSellDeltas(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(baseDeltaProposed)
-  const quoteDelta = quoteDeltaToDistribute
-  // const talliesDeltas = getTalliesDeltas(getRandomNumberTodo)(fairpool.shares)(quoteDeltaToDistribute)
-  // const quoteDistributed = sum(talliesDeltas.map(d => d.amount))
-  // const quoteDelta = quoteDeltaToDistribute - quoteDistributed
-  // talliesDeltas.forEach(tallyDelta => {
-  //   const tally = grabBalance(tallyDelta.address)(fairpool.tallies)
-  //   tally.amount += tallyDelta.amount
-  // })
+  const { baseDelta, quoteDelta } = getSellDeltas(baseLimit, quoteOffset)(baseSupplyCurrent, quoteSupplyCurrent)(baseDeltaProposed)
+  const params: GetTalliesDeltaParams = todo({ step: 0n, offset: 0n })
+  const shares = [getSenderHieroShare(fairpool.shares)(sender)]
+  const talliesDeltas = getTalliesDeltasFromHieroShares(fairpool, sender, params)(shares)(quoteDelta)
+  const quoteDistributed = sumAmounts(talliesDeltas)
+  assert.eq(quoteDistributed, quoteDelta, 'quoteDistributed', 'quoteDelta')
+  for (const tallyDelta of talliesDeltas) {
+    const tally = grabBalance(tallyDelta.address)(fairpool.tallies)
+    tally.amount += tallyDelta.amount
+  }
+  const tallySenderQuote = grabBalance(sender)(fairpool.tallies)
   const balanceSenderBase = grabBalance(sender)(fairpool.balances)
   const balanceSenderQuote = grabBalance(sender)(blockchain.balances)
   const balanceContractQuote = grabBalance(contract)(blockchain.balances)
-  fairpool.quoteSupply -= quoteDelta
-  sendB(quoteDelta)(balanceContractQuote, balanceSenderQuote)
+  sendB(tallySenderQuote.amount)(balanceContractQuote, balanceSenderQuote)
   subB(baseDelta)(balanceSenderBase)
+  tallySenderQuote.amount = 0n
+  fairpool.quoteSupply -= quoteDelta
   return validateState(state)
 })
 

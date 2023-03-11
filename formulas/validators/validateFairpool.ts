@@ -1,16 +1,16 @@
-import { assert } from '../../../utils/bigint/arithmetic'
+import { assert } from '../../../utils/bigint/BigIntBasicArithmetic'
 import { isEqualBy } from '../../../utils/lodash'
 import { getAmountD, getTotalSupply } from '../helpers'
 import { Balance, Fairpool, getBaseSupplyF, getQuoteSupplyF } from '../uni'
 import { validateBalances } from './validateBalance'
+import { validateFairpoolShares } from './validateFairpoolShares'
 import { validatePricingParams } from './validatePricingParams'
-import { validateShares } from './validateShares'
 
-export const validateFairpool = (quoteBalances: Balance[]) => <T extends Fairpool>(fairpoolIn: T) => {
+export const validateFairpool = (quoteBalances: Balance[]) => (fairpoolIn: Fairpool) => {
   const fairpool = validatePricingParams(fairpoolIn)
   validateBalances(fairpool.balances)
   validateBalances(fairpool.tallies)
-  validateShares(fairpool.scale)(fairpool.shares)
+  validateFairpoolShares(fairpool.scale)(fairpool.shares)
   assert.lte(fairpool.holdersPerDistributionMax, BigInt(Number.MAX_SAFE_INTEGER), 'fairpool.holdersPerDistributionMax', 'BigInt(Number.MAX_SAFE_INTEGER)', {}, 'Required for range() in getTalliesDelta()')
   const quoteSupplyTallies = getTotalSupply(fairpool.tallies)
   const baseSupplyActual = getTotalSupply(fairpool.balances)

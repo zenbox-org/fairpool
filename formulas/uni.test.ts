@@ -6,7 +6,8 @@ import { MutatorV } from '../../generic/models/Mutator'
 import { BigIntArrayComparisons } from '../../utils/arithmetic/order'
 import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
 import { assertByBinary, assertEq } from '../../utils/assert'
-import { BigIntAllAssertions, BigIntBasicArithmetic, BigIntBasicOperations } from '../../utils/bigint/arithmetic'
+import { BigIntAllAssertions, BigIntBasicArithmetic } from '../../utils/bigint/BigIntBasicArithmetic'
+import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
 import { dbg, dbgS, debug, inner, input, output } from '../../utils/debug'
 import { ensure } from '../../utils/ensure'
 import { assertPRD } from '../../utils/fast-check/assert'
@@ -20,29 +21,24 @@ import { Referral } from '../models/Referral'
 import { PairOfReferralsSortedAscendingByLength } from '../models/Referral/PairOfReferralsSortedAscendingByLength'
 import { countArb } from './arbitraries/countArb'
 import { getNumeratorsArb } from './arbitraries/getNumeratorsArb'
-import { BigIntQuotientFunctions } from './arbitraries/getQuotientFunctions'
-import { getStateArb } from './arbitraries/getStateArb'
+import { getStateZeroSharesArb } from './arbitraries/getStateZeroSharesArb'
 import { priceParamsArb } from './arbitraries/priceParamsArb'
 import { uint256Arb } from './arbitraries/uint256Arb'
 import { assertBalanceDiffs } from './assertBalanceDiffs'
 import { cleanState } from './clean'
-import { quoteOffsetMin, quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin, scaleFixed } from './constants'
+import { quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin } from './constants'
+import { alice, base, bob, contract, quote, quoteDeltaDefault, stateDefault, usersDefault } from './default'
 import { getAmountD, getAmountsBQ, getBalanceD, getBalancesBQ } from './helpers'
-import { Action, Address, Balance, BalanceDeltaTuple, buy, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltaMinF, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, selloff, State } from './uni'
+import { BigIntQuotientFunctions } from './models/bigint/BigIntQuotientFunctions'
+import { Action, Address, Balance, BalanceDeltaTuple, buy, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, selloff, State } from './uni'
 import { validateFairpool } from './validators/validateFairpool'
 import { validatePricingParams } from './validators/validatePricingParams'
-import { balancesZero, blockchainZero, fairpoolZero } from './zero'
 
 const { zero, one, num, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
 const { sum, sumAmounts, halve, clamp, clampIn, getShare, getDeltas } = BigIntBasicOperations
-const { toQuotients, toBoundedArray, fromNumeratorsToValues } = BigIntQuotientFunctions
+const { getQuotientsFromNumberNumerators, getBoundedArrayFromQuotients, getValuesFromNumerators } = BigIntQuotientFunctions
 const { isAscending, isDescending, isAscendingStrict, isDescendingStrict } = BigIntArrayComparisons
 const assert = BigIntAllAssertions
-const users = ['alice', 'bob', 'sam', 'ted']
-const addresses = ['contract', ...users]
-const assets = ['base', 'quote']
-const [contract, alice, bob, sam, ted] = addresses
-const [base, quote] = assets
 
 /** helpers */
 const getPricingParams = ({ quoteOffsetMultiplierProposed, baseLimit }: PrePriceParams) => {
@@ -56,28 +52,7 @@ const getPricingParams = ({ quoteOffsetMultiplierProposed, baseLimit }: PrePrice
 const getBalances = getBalancesBQ(base, quote)
 const getAmounts = getAmountsBQ(base, quote)
 
-const getShareScaledDefault = getShare(scaleFixed)
-const getShareScaledDefaultPips = getShareScaledDefault(num(10000))
-const fairpoolDefault: Fairpool = validateFairpool(balancesZero)({
-  ...fairpoolZero,
-  quoteOffset: 2n * quoteOffsetMin,
-  address: contract,
-  quoteSupply: zero,
-  beneficiaries: [{ address: sam, share: scaleFixed }],
-  owner: sam,
-  operator: ted,
-  royalties: getShareScaledDefaultPips(num(2000)),
-  earnings: getShareScaledDefaultPips(num(7500)),
-  fees: getShareScaledDefaultPips(num(2500)),
-  holdersPerDistributionMax: num(256),
-})
-const stateDefault: State = {
-  blockchain: blockchainZero,
-  fairpools: [fairpoolDefault],
-}
-const quoteDeltaDefault = getQuoteDeltaMinF(fairpoolDefault)
-
-export const stateArb = getStateArb(contract, users)
+export const stateArb = getStateZeroSharesArb(contract, usersDefault)
 
 const getBalancesStats = (state: State) => getBalancesLocalD([alice, bob])(getFairpool(state), state.blockchain)
 const dbgBalancesStatsAction = (state: State) => {
@@ -412,7 +387,7 @@ testFun(async function assertThirdPartyBuyOrdersHaveDirectInfluenceOnProfit() {
   })
 })
 
-testFun.skip(async function assertTalliesNeverChangeInDutyFreeContract() {
+testFun.skip(async function assertTalliesNeverChangeInZeroSharesContract() {
   return todo()
 })
 

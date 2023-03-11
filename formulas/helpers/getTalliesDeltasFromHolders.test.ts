@@ -1,10 +1,11 @@
 import { record } from 'fast-check'
-import { BigIntBasicArithmetic, BigIntBasicOperations } from '../../../utils/bigint/arithmetic'
+import { BigIntBasicArithmetic } from '../../../utils/bigint/BigIntBasicArithmetic'
+import { BigIntBasicOperations } from '../../../utils/bigint/BigIntBasicOperations'
 import { input } from '../../../utils/debug'
 import { assertPRD } from '../../../utils/fast-check/assert'
 import { testFun } from '../../../utils/jest/testFun'
 import { todo } from '../../../utils/todo'
-import { fairpoolArb } from '../arbitraries/getFairpoolArb'
+import { fairpoolArb } from '../arbitraries/getFairpoolZeroSharesArb'
 
 const { mod } = BigIntBasicArithmetic
 const { clampIn, getShare } = BigIntBasicOperations

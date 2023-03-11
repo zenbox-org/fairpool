@@ -1,4 +1,4 @@
-import { BigIntBasicOperations } from '../../../utils/bigint/arithmetic'
+import { BigIntBasicOperations } from '../../../utils/bigint/BigIntBasicOperations'
 import { getFairpool, State } from '../uni'
 
 export const clampBaseDeltaRaw = (baseLimit: bigint) => BigIntBasicOperations.clamp(0n, baseLimit)

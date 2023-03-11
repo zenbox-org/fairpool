@@ -1,8 +1,8 @@
 import { scaleFixed } from '../constants'
+import { BigIntQuotientFunctions } from '../models/bigint/BigIntQuotientFunctions'
 import { getNumeratorsArb } from './getNumeratorsArb'
-import { BigIntQuotientFunctions } from './getQuotientFunctions'
 
 export const getScaledValuesArb = (length: number) => {
   return getNumeratorsArb(length, 0)
-    .map(BigIntQuotientFunctions.fromNumeratorsToValues(0n, scaleFixed))
+    .map(BigIntQuotientFunctions.getValuesFromNumerators(0n, scaleFixed))
 }

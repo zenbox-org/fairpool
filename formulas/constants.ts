@@ -1,5 +1,5 @@
 import { uint128Max } from '../../bn/constants'
-import { BigIntBasicOperations } from '../../utils/bigint/arithmetic'
+import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
 
 const { clamp } = BigIntBasicOperations
 
