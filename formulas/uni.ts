@@ -404,6 +404,8 @@ export const buy = (contract: Address, sender: Address, quoteDeltaProposed: Amou
   return validateState(state)
 })
 
+export const buyR = ({ contract, sender, quoteDeltaProposed }: { contract: Address, sender: Address, quoteDeltaProposed: Amount }) => buy(contract, sender, quoteDeltaProposed)
+
 const total: Quotient<bigint> = { numerator: 1n, denominator: 1n }
 
 /**

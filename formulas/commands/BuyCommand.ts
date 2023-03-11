@@ -1,6 +1,6 @@
 import { InternalCommand } from '../../../utils/fast-check/commands/InternalCommand'
 import { todo } from '../../../utils/todo'
-import { Address, Amount } from '../uni'
+import { Address, Amount, buy } from '../uni'
 import { Model, Real } from './index'
 
 export class BuyCommand extends InternalCommand<Model, Real> {
@@ -11,7 +11,7 @@ export class BuyCommand extends InternalCommand<Model, Real> {
   }
 
   async runModel(model: Model) {
-    return todo<Model>()
+    return buy(this.contract, this.sender, this.quoteDeltaProposed)(model)
   }
 
   async runReal(real: Real) {
