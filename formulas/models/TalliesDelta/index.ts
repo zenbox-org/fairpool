@@ -1,3 +1,3 @@
-import { BalanceDelta } from '../../uni'
+import { BalanceDelta } from '../BalanceDelta'
 
 export type TalliesDelta = BalanceDelta

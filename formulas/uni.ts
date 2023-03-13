@@ -1,16 +1,12 @@
 import { createPipe, map, pick, pipe } from 'remeda'
 import { asSafeMutator } from '../../divide-and-conquer/asSafeMutator'
-import { BalanceGen, BalanceGenTuple } from '../../finance/models/BalanceGen'
-import { FintGen, FintGenTuple } from '../../finance/models/FintGen'
 import { getGenMutilatorsWithAmount } from '../../finance/models/FintGen/getGenMutilatorsWithAmount'
 import { toFintGenTuple } from '../../finance/models/FintGen/toFintGenTuple'
-import { Mutator } from '../../generic/models/Mutator'
 import { BigIntAllAssertions, BigIntBasicArithmetic } from '../../utils/bigint/BigIntBasicArithmetic'
 import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
 import { inner, input, output } from '../../utils/debug'
 import { ensureByIndex, ensureFind, getFinder } from '../../utils/ensure'
 import { AssertionFailedError } from '../../utils/error'
-import { get__filename } from '../../utils/node'
 import { Quotient } from '../../utils/Quotient'
 import { meldWithLast } from '../../utils/remeda/meldWithLast'
 import { todo } from '../../utils/todo'
@@ -20,26 +16,17 @@ import { BigIntQuotientFunctions, getQuotientsFromNumerators } from './models/bi
 import { GetTalliesDeltasFromRecipientConfig } from './models/GetTalliesDeltaConfig'
 import { HieroShare, validateHieroShare } from './models/HieroShare'
 import { validateFairpools } from './validators/validateFairpool'
+import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
+import { Address } from 'libs/ethereum/models/Address'
+import { getHardcodedFilename } from '../../../utils/getHardcodedFilename'
+import { Asset } from './models/Asset'
+import { Fint } from './models/Fint'
+import { Amount } from './models/Amount'
+import { Balance } from './models/Balance'
+
+const filename = getHardcodedFilename('uni.ts')
 
 type N = bigint
-
-export type Address = string
-
-export type Asset = string
-
-export type Amount = bigint
-
-export type Fint = FintGen<Address, Asset, Amount>
-
-export type FintTuple = FintGenTuple<Address, Asset, Amount>
-
-export type Balance = BalanceGen<Address, Amount>
-
-export type BalanceDelta = BalanceGen<Address, Amount>
-
-export type BalanceTuple = BalanceGenTuple<Address, Amount>
-
-export type BalanceDeltaTuple = BalanceGenTuple<Address, Amount>
 
 export type History<T> = T[]
 
@@ -90,6 +77,18 @@ export interface DistributionParams {
   fees: N
 }
 
+export type ShareRoot = bigint
+
+export type ShareRootReferral = bigint
+
+export type ShareRootReferralDiscount = bigint
+
+export type SimpleShare = [ShareRoot, ShareRootReferral, ShareRootReferralDiscount]
+
+export type SimpleController = [Address, Address, Address]
+
+export type SimpleShares = NonEmptyArray<SimpleShare>
+
 export interface Fairpool extends PriceParams, DistributionParams {
   address: Address
   balances: Balance[] // in base currency // TODO: Validate that balance addresses are unique
@@ -98,6 +97,9 @@ export interface Fairpool extends PriceParams, DistributionParams {
   scale: N
   seed: N
   shares: HieroShare[]
+  // shares: SimpleShare[]
+  // controllers: SimpleController[]
+  // recipients: Address[]
   owner: Address
   operator: Address
   holdersPerDistributionMax: N
@@ -112,18 +114,6 @@ export interface State {
   fairpools: Fairpool[]
 }
 
-export type Action = Mutator<State>
-
-export interface BalancesBQ {
-  base: Fint
-  quote: Fint
-}
-
-export interface AmountsBQ {
-  base: Amount
-  quote: Amount
-}
-
 const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
 const { halve, sum, sumAmounts } = BigIntBasicOperations
 const { getQuotientsFromNumberNumerators, getBoundedArrayFromQuotients, getValuesFromNumerators } = BigIntQuotientFunctions
@@ -133,8 +123,6 @@ const assert = BigIntAllAssertions
 export class BaseDeltaMustBeGreaterThanZero extends AssertionFailedError<{ baseDelta: Amount }> {}
 
 export class QuoteDeltaMustBeGreaterThanZero extends AssertionFailedError<{ quoteDelta: Amount }> {}
-
-const __filename = get__filename(import.meta.url)
 
 export const getFairpoolFun = <Rest>(f: (baseLimit: N, quoteOffset: N) => Rest) => (fairpool: Fairpool) => f(fairpool.baseLimit, fairpool.quoteOffset)
 
@@ -240,7 +228,7 @@ const getRandomNumberTodo: GetRandomNumber = () => todo()
  * NOTE: actual deltas are always less than or equal to expected deltas (because of integer division)
  */
 export const getBuyDeltas = (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (quoteDeltaProposed: N) => {
-  input(__filename, getBuyDeltas, { baseSupplyCurrent, quoteSupplyCurrent, quoteDeltaProposed })
+  input(filename, getBuyDeltas, { baseSupplyCurrent, quoteSupplyCurrent, quoteDeltaProposed })
   assert.gte(quoteDeltaProposed, zero, 'quoteDeltaProposed', 'zero')
   const quoteSupplyProposed = add(quoteSupplyCurrent, quoteDeltaProposed)
   const baseSupplyNew = getBaseSupply(baseLimit, quoteOffset)(quoteSupplyProposed)
@@ -251,7 +239,7 @@ export const getBuyDeltas = (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent
   // inter(__filename, getBuyDeltas, { baseDelta, quoteDelta })
   if (!gt(zero)(baseDelta)) throw new BaseDeltaMustBeGreaterThanZero({ baseDelta })
   if (!gt(zero)(quoteDelta)) throw new QuoteDeltaMustBeGreaterThanZero({ quoteDelta })
-  return output(__filename, getBuyDeltas, { baseDelta, quoteDelta })
+  return output(filename, getBuyDeltas, { baseDelta, quoteDelta })
 }
 
 /**
@@ -259,15 +247,15 @@ export const getBuyDeltas = (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent
  * NOTE: sell deltas are positive, but they should be subtracted from the current balances (not added)
  */
 export const getSellDeltas = (baseLimit: N, quoteOffset: N) => (baseSupplyCurrent: N, quoteSupplyCurrent: N) => (baseDeltaProposed: N) => {
-  input(__filename, getSellDeltas, { baseSupplyCurrent, quoteSupplyCurrent, baseDeltaProposed })
+  input(filename, getSellDeltas, { baseSupplyCurrent, quoteSupplyCurrent, baseDeltaProposed })
   const baseSupplyProposed = sub(baseSupplyCurrent, baseDeltaProposed)
   const quoteSupplyProposed = getQuoteSupply(baseLimit, quoteOffset)(baseSupplyProposed)
   const baseDelta = sub(baseSupplyCurrent, baseSupplyProposed)
   const quoteDelta = sub(quoteSupplyCurrent, quoteSupplyProposed)
-  inner(__filename, getSellDeltas, { baseDelta, quoteDelta })
+  inner(filename, getSellDeltas, { baseDelta, quoteDelta })
   if (!gt(zero)(baseDelta)) throw new BaseDeltaMustBeGreaterThanZero({ baseDelta })
   if (!gt(zero)(quoteDelta)) throw new QuoteDeltaMustBeGreaterThanZero({ quoteDelta })
-  return output(__filename, getSellDeltas, { baseDelta, quoteDelta })
+  return output(filename, getSellDeltas, { baseDelta, quoteDelta })
 }
 
 export const byAssetWallet = (asset: Asset, wallet: Address) => (balance: Fint) => {
@@ -387,7 +375,7 @@ export const getBalancesLocalD = (addresses: Address[]) => (fairpool: Fairpool, 
 }
 
 export const buy = (contract: Address, sender: Address, quoteDeltaProposed: Amount) => asSafeMutator((state: State) => {
-  input(__filename, buy, { action: 'buy', contract, sender, quoteDeltaProposed })
+  input(filename, buy, { action: 'buy', contract, sender, quoteDeltaProposed })
   const { fairpool, blockchain } = getStateLocal(contract)(state)
   const { baseLimit, quoteOffset } = fairpool
   // const balancesContract = getBalancesLocal(contract)(balances)
@@ -420,8 +408,22 @@ const getSenderHieroShare = (shares: HieroShare[]) => (sender: Address) => valid
   children: shares,
 })
 
+// const getHieroSharesFromSimpleShares = (shares: SimpleShare[]): HieroShare[] => {
+//   const [head, tail] = shares
+//   const [root] = head
+//   const holdersShare: HieroShare = {
+//     quotient: getScaledQuotient(root),
+//   }
+//   return shares.map(([root, rootReferral, rootReferralDiscount]) => ({
+//     quotient: getScaledQuotient(root),
+//     getTalliesDeltaConfig: {
+//       type: '',
+//     },
+//   }))
+// }
+
 export const sell = (contract: Address, sender: Address, baseDeltaProposed: N) => asSafeMutator((state: State) => {
-  input(__filename, sell, { action: 'sell', contract, sender, baseDeltaProposed })
+  input(filename, sell, { action: 'sell', contract, sender, baseDeltaProposed })
   const { fairpool, blockchain } = getStateLocal(contract)(state)
   const { baseLimit, quoteOffset } = fairpool
   const baseSupplyCurrent = getTotalSupply(fairpool.balances)

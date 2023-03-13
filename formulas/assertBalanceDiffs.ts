@@ -3,7 +3,8 @@ import { getFintGenTupleKey } from '../../finance/models/FintGenTuple/getFintGen
 import { BigIntAllAssertions } from '../../utils/bigint/BigIntBasicArithmetic'
 import { isEqualBy } from '../../utils/lodash'
 import { getAmountD } from './helpers'
-import { Address, Amount, Balance, State } from './uni'
+import { Address, Balance, State } from './uni'
+import { Amount } from './models/Amount'
 
 // type Source = 'base' | 'quote'
 type BalanceGetter = (state: State) => Balance[]

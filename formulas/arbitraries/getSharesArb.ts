@@ -7,6 +7,7 @@ import { GetTalliesDeltaConfig, getTalliesDeltaConfigTypes, GetTalliesDeltasFrom
 import { HieroShare } from '../models/HieroShare'
 import { Address } from '../uni'
 import { getNumeratorsArb } from './getNumeratorsArb'
+import { sharesLengthMax } from '../constants'
 
 export const getTalliesDeltasFromHoldersConfigArb = record<GetTalliesDeltasFromHoldersConfig>({
   type: constant('GetTalliesDeltasFromHoldersConfig'),
@@ -50,8 +51,6 @@ export const shareWithoutQuotientArb = (users: Address[]) => (depth: number): Ar
 // export const getShareFromHoldersArb = (quotient: QuotientGen<bigint>) => record({
 //   quotient:
 // })
-
-const sharesLengthMax = 10
 
 export const getSharesArb = (users: Address[]) => (depth: number) => {
   return getNumeratorsArb(sharesLengthMax + 1)

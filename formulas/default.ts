@@ -2,19 +2,19 @@ import { BigIntBasicArithmetic } from '../../utils/bigint/BigIntBasicArithmetic'
 import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
 import { quoteOffsetMin, scaleFixed } from './constants'
 import { Fairpool, getQuoteDeltaMinF, State } from './uni'
-import { validateFairpool } from './validators/validateFairpool'
+import { validateFairpoolFull } from './validators/validateFairpool'
 import { balancesZero, blockchainZero, fairpoolZero } from './zero'
 
 const { zero, one, num, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
 const { sum, sumAmounts, halve, clamp, clampIn, getShare, getDeltas } = BigIntBasicOperations
 
-export const usersDefault = ['alice', 'bob', 'sam', 'ted']
+export const usersDefault = ['alice', 'bob', 'sam', 'ted', 'owner']
 
 export const addressesDefault = ['contract', ...usersDefault]
 
 export const assetsDefault = ['base', 'quote']
 
-export const [contract, alice, bob, sam, ted] = addressesDefault
+export const [contract, alice, bob, sam, ted, owner] = addressesDefault
 
 export const [base, quote] = assetsDefault
 
@@ -22,7 +22,7 @@ export const getShareScaledDefault = getShare(scaleFixed)
 
 export const getShareScaledDefaultPips = getShareScaledDefault(num(10000))
 
-export const fairpoolDefault: Fairpool = validateFairpool(balancesZero)({
+export const fairpoolDefault: Fairpool = validateFairpoolFull(balancesZero)({
   ...fairpoolZero,
   quoteOffset: 2n * quoteOffsetMin,
   address: contract,

@@ -5,10 +5,11 @@ import { BigIntBasicOperations } from '../../../utils/bigint/BigIntBasicOperatio
 import { GetTalliesDeltaConfig } from '../models/GetTalliesDeltaConfig'
 import { HieroShare } from '../models/HieroShare'
 import { TalliesDelta } from '../models/TalliesDelta'
-import { Address, Fairpool, GetTalliesDeltaParams } from '../uni'
+import { Fairpool, GetTalliesDeltaParams } from '../uni'
 import { getTalliesDeltasFromHolders } from './getTalliesDeltasFromHolders'
 import { getTalliesDeltasFromRecipient } from './getTalliesDeltasFromRecipient'
 import { getTalliesDeltasFromReferrals } from './getTalliesDeltasFromReferrals'
+import { Address } from '../../../ethereum/models/Address'
 
 const { mod } = BigIntBasicArithmetic
 const { clampIn, getShare, getQuotientOf, sumAmounts } = BigIntBasicOperations

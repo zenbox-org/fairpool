@@ -1,8 +1,10 @@
 import { pipe } from 'remeda'
 import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
 import { ensureFind } from '../../utils/ensure'
-import { Address, Asset, Balance, byAssetWallet, Fairpool, Fint, State } from './uni'
+import { Address, Balance, byAssetWallet, Fairpool, State } from './uni'
 import { validateBalance } from './validators/validateBalance'
+import { Asset } from './models/Asset'
+import { Fint } from './models/Fint'
 
 const { sumAmounts } = BigIntBasicOperations
 

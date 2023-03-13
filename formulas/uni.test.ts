@@ -1,8 +1,8 @@
-import { test } from '@jest/globals'
-import { asyncModelRun, record } from 'fast-check'
+import { expect, test } from '@jest/globals'
+import { bigInt, record } from 'fast-check'
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
-import { clone, createPipe, last, map, sort, times, zip } from 'remeda'
-import { MutatorV } from '../../generic/models/Mutator'
+import { clone, createPipe, isError, last, map, sort, times, zip } from 'remeda'
+import { Mutator, MutatorV } from '../../generic/models/Mutator'
 import { BigIntArrayComparisons } from '../../utils/arithmetic/order'
 import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
 import { assertByBinary, assertEq } from '../../utils/assert'
@@ -12,14 +12,12 @@ import { dbg, dbgS, debug, inner, input, output } from '../../utils/debug'
 import { ensure } from '../../utils/ensure'
 import { assertPRD } from '../../utils/fast-check/assert'
 import { testFun } from '../../utils/jest/testFun'
-import { get__filename } from '../../utils/node'
 import { compareNumerals } from '../../utils/numeral/sort'
 import { sequentialReducePushV } from '../../utils/promise'
 import { after } from '../../utils/remeda/wrap'
 import { todo } from '../../utils/todo'
 import { Referral } from '../models/Referral'
 import { PairOfReferralsSortedAscendingByLength } from '../models/Referral/PairOfReferralsSortedAscendingByLength'
-import { commandsArb } from './arbitraries/commandsArb'
 import { countArb } from './arbitraries/countArb'
 import { getNumeratorsArb } from './arbitraries/getNumeratorsArb'
 import { getStateZeroSharesArb } from './arbitraries/getStateZeroSharesArb'
@@ -31,15 +29,24 @@ import { quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin } from './cons
 import { alice, base, bob, contract, quote, quoteDeltaDefault, stateDefault, usersDefault } from './default'
 import { getAmountD, getAmountsBQ, getBalanceD, getBalancesBQ } from './helpers'
 import { BigIntQuotientFunctions } from './models/bigint/BigIntQuotientFunctions'
-import { Action, Address, Balance, BalanceDeltaTuple, buy, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, selloff, State } from './uni'
-import { validateFairpool } from './validators/validateFairpool'
+import { buy, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, selloff, State } from './uni'
+import { validateFairpoolFull } from './validators/validateFairpool'
 import { validatePricingParams } from './validators/validatePricingParams'
+import { BoundsBI } from '../../utils/Bounds'
+import { inside } from '../../utils/Bounds/inside'
+import { safely } from '../../utils/Error/safely'
+import { getHardcodedFilename } from '../../../utils/getHardcodedFilename'
+import { Address } from 'libs/ethereum/models/Address'
+import { BalanceDeltaTuple } from './models/BalanceDeltaTuple'
+import { Balance } from './models/Balance'
 
 const { zero, one, num, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
 const { sum, sumAmounts, halve, clamp, clampIn, getShare, getDeltas } = BigIntBasicOperations
 const { getQuotientsFromNumberNumerators, getBoundedArrayFromQuotients, getValuesFromNumerators } = BigIntQuotientFunctions
 const { isAscending, isDescending, isAscendingStrict, isDescendingStrict } = BigIntArrayComparisons
 const assert = BigIntAllAssertions
+
+type Action = Mutator<State>
 
 /** helpers */
 const getPricingParams = ({ quoteOffsetMultiplierProposed, baseLimit }: PrePriceParams) => {
@@ -58,25 +65,25 @@ export const stateArb = getStateZeroSharesArb(contract, usersDefault)
 const getBalancesStats = (state: State) => getBalancesLocalD([alice, bob])(getFairpool(state), state.blockchain)
 const dbgBalancesStatsAction = (state: State) => {
   const stats = getBalancesStats(state)
-  dbgS(__filename, 'dbgBalancesStats', 'inter', stats)
+  dbgS(filename, 'dbgBalancesStats', 'inter', stats)
   return state
 }
 const dbgContextAction = (state: State) => {
-  dbg(__filename, dbgContextAction, 'input', getPricingParamsFromFairpool(state.fairpools[0]))
+  dbg(filename, dbgContextAction, 'input', getPricingParamsFromFairpool(state.fairpools[0]))
   return state
 }
 const getBalancesHistoryBaseAlice = createPipe(map(getBalancesBase), map(getBalanceD(alice)))
 const getAmountsHistoryBaseAlice = createPipe(getBalancesHistoryBaseAlice, map((b: Balance) => b.amount))
 const sumAmountsHistoryBaseAlice = createPipe(getAmountsHistoryBaseAlice, sum)
-const __filename = get__filename(import.meta.url)
+const filename = getHardcodedFilename('uni.test.ts')
 const run = <Val, Args extends unknown[]>(mutators: MutatorV<Val, Args>[], ...args: Args) => (value: Val) => {
   const mutatorsWithSeparator = mutators.map<MutatorV<Val, Args>>(mutator => (obj, ...args) => {
-    debug(__filename, run, '>>>')
+    debug(filename, run, '>>>')
     // debug(__filename, run, getBalancesStats(obj))
     return mutator(obj, ...args)
   })
   const results = sequentialReducePushV(mutatorsWithSeparator, ...args)(value)
-  debug(__filename, run, '<<<')
+  debug(filename, run, '<<<')
   return results
 }
 
@@ -129,10 +136,10 @@ testFun(async function assertGetBaseSupplyToBeSemiInvertible() {
   return assertPRD(priceParamsArb, uint256Arb, async (params, quoteSupply) => {
     const { baseLimit, quoteOffset } = validatePricingParams(params)
     // NOTE: quoteSupply doesn't need to be clamped
-    input(__filename, assertGetBaseSupplyToBeSemiInvertible, params)
+    input(filename, assertGetBaseSupplyToBeSemiInvertible, params)
     const baseSupplyCalculated = getBaseSupply(baseLimit, quoteOffset)(quoteSupply)
     const quoteSupplyCalculated = getQuoteSupply(baseLimit, quoteOffset)(baseSupplyCalculated)
-    inner(__filename, assertGetBaseSupplyToBeSemiInvertible, { quoteSupply, baseSupplyCalculated, quoteSupplyCalculated })
+    inner(filename, assertGetBaseSupplyToBeSemiInvertible, { quoteSupply, baseSupplyCalculated, quoteSupplyCalculated })
     expect(quoteSupplyCalculated).toBeLessThanOrEqual(quoteSupply)
   })
 })
@@ -324,7 +331,7 @@ testFun(async function assertThereExistsSuchAPairOfScenariosWhereTheFirstScenari
   // const baseLimit = num(20000)
   // const quoteOffset = num(100000)
   const state = clone(stateDefault)
-  state.fairpools[0] = validateFairpool(state.blockchain.balances)({
+  state.fairpools[0] = validateFairpoolFull(state.blockchain.balances)({
     ...state.fairpools[0],
     baseLimit: num(100000),
     quoteOffset: num(200000),
@@ -349,14 +356,14 @@ testFun(async function assertThereExistsSuchAPairOfScenariosWhereTheFirstScenari
 testFun(async function assertThirdPartyBuyOrdersHaveDirectInfluenceOnProfit() {
   const numeratorsArb = getNumeratorsArb(3)
   const argsArb = record({ state: stateArb, numerators: numeratorsArb }).map(function mapArgs(args) {
-    input(__filename, mapArgs, args)
+    input(filename, mapArgs, args)
     const { state, numerators } = args
     const fairpool = getFairpool(state)
     const upscale = mul(num(2))
     const baseLimit = fairpool.baseLimit
     const quoteOffset = fairpool.quoteOffset // pipe(fairpool.quoteOffset, upscale, upscale) // NOTE: this is a hack to ensure that baseDeltaMin * numerators.length < baseSupplyMax, some tests may fail if the double upscale is not sufficient
     const baseSupplySuperlinearMin = getBaseSupplySuperlinearMin(baseLimit, quoteOffset)
-    inner(__filename, mapArgs, { baseLimit, quoteOffset, baseSupplySuperlinearMin })
+    inner(filename, mapArgs, { baseLimit, quoteOffset, baseSupplySuperlinearMin })
     const numeratorsNew = sort(numerators, compareNumerals) // ensure that numeratorBob2 is gt numeratorBob1
     const baseSupplySuperlinearRangeLength = baseLimit - baseSupplySuperlinearMin - 1n
     const baseDeltas = getBaseDeltasFromNumerators(baseLimit, quoteOffset)(1n, baseSupplySuperlinearRangeLength)(numeratorsNew)
@@ -369,13 +376,13 @@ testFun(async function assertThirdPartyBuyOrdersHaveDirectInfluenceOnProfit() {
     ]
     fairpool.baseLimit = baseLimit
     fairpool.quoteOffset = quoteOffset
-    return output(__filename, mapArgs, {
+    return output(filename, mapArgs, {
       state,
       scenarios,
     })
   })
   return assertPRD(argsArb, async function isEveryDeviationOn3rdPartyOrdersGte1(args) {
-    input(__filename, isEveryDeviationOn3rdPartyOrdersGte1, args)
+    input(filename, isEveryDeviationOn3rdPartyOrdersGte1, args)
     const { state, scenarios } = args
     const profits = scenarios.map(([quoteDeltaAlice, quoteDeltaBob]) => {
       return getProfitFromTuples([
@@ -404,6 +411,67 @@ testFun.skip(async function assertTallyOfSenderIsAlwaysZeroAfterWithdraw() {
   return todo()
 })
 
+testFun.skip(async function assertUserCanChangeReferrals() {
+  return todo()
+})
+testFun.skip(async function assertUserCanSetNumeratorsForReferrals() {
+  return todo()
+})
+
+testFun.skip(async function assertReferralsNumeratorsSumIsLteScale() {
+  return todo()
+})
+
+testFun.skip(async function assertOwnerCanUpdateShares() {
+  return todo()
+})
+
+testFun.skip(async function assertOwnerCannotChangeSharesOutsideOfBounds() {
+  return todo()
+})
+
+testFun.skip(async function assertOwnerCanGiveUpHisRightToUpdateShares() {
+  return todo()
+})
+
+testFun.skip(async function assertOwnerCanLimitHisRightToUpdateShares() {
+  return todo()
+})
+
+interface Tax {
+  get: (fairpool: Fairpool) => bigint
+  set: (fairpool: Fairpool, value: bigint) => Fairpool // may throw an error
+  setBounds: (fairpool: Fairpool, bounds: BoundsBI) => Fairpool // may throw an error
+}
+
+const taxIsBounded = (fairpool: Fairpool) => (bounds: BoundsBI) => (tax: Tax) => {
+  return (nextTaxValue: bigint) => {
+    const result = safely(() => tax.set(fairpool, nextTaxValue))
+    const outsideOfBounds = !inside(bounds)(nextTaxValue)
+    const throwsError = isError(result)
+    return outsideOfBounds === throwsError
+  }
+}
+
+const getTaxes = (fairpool: Fairpool) => todo<Tax[]>()
+
+testFun.skip(async function assertTaxesCanBeFrozen() {
+  const frozenTaxValueArb = bigInt()
+  const frozenTaxValueDeltaArb = bigInt().filter(v => v !== 0n)
+  return assertPRD(stateArb, frozenTaxValueArb, frozenTaxValueDeltaArb, async function (state, frozenTaxValue, frozenTaxValueDelta) {
+    const fairpool = getFairpool(state)
+    const bounds: BoundsBI = { min: frozenTaxValue, max: frozenTaxValue }
+    const taxes = getTaxes(fairpool)
+    const fairpoolNew = taxes.reduce((fairpool, tax) => tax.setBounds(fairpool, bounds), fairpool)
+    const newTaxValue = frozenTaxValue + frozenTaxValueDelta
+    return taxes.map(taxIsBounded(fairpoolNew)(bounds)).every(check => check(newTaxValue))
+  })
+})
+
+testFun.skip(async function assertTaxesCannotBeFrozenByNonOwner() {
+
+})
+
 testFun.skip(async function assertQuoteReceivedDoesNotDecreaseIfReferralsArrayIsIncreased() {
   const referralsPairArb = todo<Arbitrary<PairOfReferralsSortedAscendingByLength>>()
   return assertPRD(stateArb, referralsPairArb, async function (state, pairOfReferrals) {
@@ -414,13 +482,5 @@ testFun.skip(async function assertQuoteReceivedDoesNotDecreaseIfReferralsArrayIs
     }
     const profits = pairOfReferrals.map(getProfits)
     return isAscending(profits)
-  })
-})
-
-testFun.skip(async function assertNoDeadlock() {
-  return assertPRD(stateArb, commandsArb(usersDefault), async function (state, commands) {
-    const real = todo()
-    const model = state
-    await asyncModelRun(() => ({ model, real }), commands)
   })
 })
