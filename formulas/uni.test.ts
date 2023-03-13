@@ -1,6 +1,7 @@
 import { expect, test } from '@jest/globals'
 import { bigInt, record } from 'fast-check'
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
+import { Address } from 'libs/ethereum/models/Address'
 import { clone, createPipe, isError, last, map, sort, times, zip } from 'remeda'
 import { Mutator, MutatorV } from '../../generic/models/Mutator'
 import { BigIntArrayComparisons } from '../../utils/arithmetic/order'
@@ -8,9 +9,13 @@ import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
 import { assertByBinary, assertEq } from '../../utils/assert'
 import { BigIntAllAssertions, BigIntBasicArithmetic } from '../../utils/bigint/BigIntBasicArithmetic'
 import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
+import { BoundsBI } from '../../utils/Bounds'
+import { inside } from '../../utils/Bounds/inside'
 import { dbg, dbgS, debug, inner, input, output } from '../../utils/debug'
 import { ensure } from '../../utils/ensure'
+import { safely } from '../../utils/Error/safely'
 import { assertPRD } from '../../utils/fast-check/assert'
+import { getHardcodedFilename } from '../../utils/getHardcodedFilename'
 import { testFun } from '../../utils/jest/testFun'
 import { compareNumerals } from '../../utils/numeral/sort'
 import { sequentialReducePushV } from '../../utils/promise'
@@ -28,17 +33,12 @@ import { cleanState } from './clean'
 import { quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin } from './constants'
 import { alice, base, bob, contract, quote, quoteDeltaDefault, stateDefault, usersDefault } from './default'
 import { getAmountD, getAmountsBQ, getBalanceD, getBalancesBQ } from './helpers'
+import { Balance } from './models/Balance'
+import { BalanceDeltaTuple } from './models/BalanceDeltaTuple'
 import { BigIntQuotientFunctions } from './models/bigint/BigIntQuotientFunctions'
 import { buy, Fairpool, getBalancesBase, getBalancesLocalD, getBalancesQuote, getBaseDeltasFromNumerators, getBaseSupply, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupply, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, PrePriceParams, selloff, State } from './uni'
 import { validateFairpoolFull } from './validators/validateFairpool'
 import { validatePricingParams } from './validators/validatePricingParams'
-import { BoundsBI } from '../../utils/Bounds'
-import { inside } from '../../utils/Bounds/inside'
-import { safely } from '../../utils/Error/safely'
-import { getHardcodedFilename } from '../../utils/getHardcodedFilename'
-import { Address } from 'libs/ethereum/models/Address'
-import { BalanceDeltaTuple } from './models/BalanceDeltaTuple'
-import { Balance } from './models/Balance'
 
 const { zero, one, num, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
 const { sum, sumAmounts, halve, clamp, clampIn, getShare, getDeltas } = BigIntBasicOperations
@@ -414,6 +414,7 @@ testFun.skip(async function assertTallyOfSenderIsAlwaysZeroAfterWithdraw() {
 testFun.skip(async function assertUserCanChangeReferrals() {
   return todo()
 })
+
 testFun.skip(async function assertUserCanSetNumeratorsForReferrals() {
   return todo()
 })

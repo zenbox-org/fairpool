@@ -1,11 +1,12 @@
+import { Address as EthAddress } from '../../../ethereum/models/Address'
 import { BigIntBasicOperations } from '../../../utils/bigint/BigIntBasicOperations'
 import { GetTalliesDeltasFromReferralsConfig } from '../models/GetTalliesDeltaConfig'
 import { TalliesDelta } from '../models/TalliesDelta'
-import { Address, Fairpool, GetTalliesDeltaParams } from '../uni'
+import { Fairpool, GetTalliesDeltaParams } from '../uni'
 
 const { clampIn, getShare, getQuotientOf, sumAmounts } = BigIntBasicOperations
 
-export const getTalliesDeltasFromReferrals = (config: GetTalliesDeltasFromReferralsConfig) => (fairpool: Fairpool, sender: Address, params: GetTalliesDeltaParams) => (quoteDistributed: bigint): TalliesDelta[] => {
+export const getTalliesDeltasFromReferrals = (config: GetTalliesDeltasFromReferralsConfig) => (fairpool: Fairpool, sender: EthAddress, params: GetTalliesDeltaParams) => (quoteDistributed: bigint): TalliesDelta[] => {
   const { discount, referralsMap } = config
   const referral = referralsMap[sender]
   if (referral) {

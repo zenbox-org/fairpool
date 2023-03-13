@@ -1,13 +1,13 @@
 import { array, boolean, constant, constantFrom, dictionary, record } from 'fast-check'
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
+import { Address as EthAddress } from '../../../ethereum/models/Address'
 import { addressArb } from '../../../ethereum/models/Address/addressArb'
 import { quotientBigIntArb } from '../../../utils/Quotient/Arbitrary/quotientBigIntArb'
+import { sharesLengthMax } from '../constants'
 import { getQuotientsFromNumberNumerators } from '../models/bigint/BigIntQuotientFunctions'
 import { GetTalliesDeltaConfig, getTalliesDeltaConfigTypes, GetTalliesDeltasFromHoldersConfig, GetTalliesDeltasFromRecipientConfig, GetTalliesDeltasFromReferralsConfig } from '../models/GetTalliesDeltaConfig'
 import { HieroShare } from '../models/HieroShare'
-import { Address } from '../uni'
 import { getNumeratorsArb } from './getNumeratorsArb'
-import { sharesLengthMax } from '../constants'
 
 export const getTalliesDeltasFromHoldersConfigArb = record<GetTalliesDeltasFromHoldersConfig>({
   type: constant('GetTalliesDeltasFromHoldersConfig'),
@@ -18,7 +18,7 @@ export const getTalliesDeltaFromRecipientConfigArb = record<GetTalliesDeltasFrom
   address: addressArb,
 })
 
-export const getTalliesDeltaFromReferralsConfigArb = (users: Address[]) => {
+export const getTalliesDeltaFromReferralsConfigArb = (users: EthAddress[]) => {
   const usersArb = constantFrom(...users)
   return record<GetTalliesDeltasFromReferralsConfig>({
     type: constant('GetTalliesDeltasFromReferralsConfig'),
@@ -30,7 +30,7 @@ export const getTalliesDeltaFromReferralsConfigArb = (users: Address[]) => {
 
 export const getTalliesDeltaConfigTypeArb = constantFrom(...getTalliesDeltaConfigTypes)
 
-export const getTalliesDeltaConfigArb = (users: Address[]) => getTalliesDeltaConfigTypeArb.chain<GetTalliesDeltaConfig>(type => {
+export const getTalliesDeltaConfigArb = (users: EthAddress[]) => getTalliesDeltaConfigTypeArb.chain<GetTalliesDeltaConfig>(type => {
   switch (type) {
     case 'GetTalliesDeltasFromHoldersConfig': return getTalliesDeltasFromHoldersConfigArb
     case 'GetTalliesDeltasFromRecipientConfig': return getTalliesDeltaFromRecipientConfigArb
@@ -43,7 +43,7 @@ type HieroShareWithoutQuotient = Omit<HieroShare, 'quotient'>
 
 type HieroShareWQ = HieroShareWithoutQuotient
 
-export const shareWithoutQuotientArb = (users: Address[]) => (depth: number): Arbitrary<HieroShareWQ> => record<HieroShareWQ>({
+export const shareWithoutQuotientArb = (users: EthAddress[]) => (depth: number): Arbitrary<HieroShareWQ> => record<HieroShareWQ>({
   getTalliesDeltaConfig: getTalliesDeltaConfigArb(users),
   children: depth > 0 ? getSharesArb(users)(depth - 1) : constant([]),
 })
@@ -52,7 +52,7 @@ export const shareWithoutQuotientArb = (users: Address[]) => (depth: number): Ar
 //   quotient:
 // })
 
-export const getSharesArb = (users: Address[]) => (depth: number) => {
+export const getSharesArb = (users: EthAddress[]) => (depth: number) => {
   return getNumeratorsArb(sharesLengthMax + 1)
     .chain(numerators => {
       const quotients = getQuotientsFromNumberNumerators(numerators)

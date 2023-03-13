@@ -1,12 +1,12 @@
 import { constantFrom, record, uniqueArray } from 'fast-check'
+import { Address as EthAddress } from '../../../ethereum/models/Address'
 import { addressArb } from '../../../ethereum/models/Address/addressArb'
-import { Address } from '../uni'
 import { fairpoolZero } from '../zero'
 import { distributionParamsArb } from './distributionParamsArb'
 import { getSharesArb } from './getSharesArb'
 import { priceParamsArb } from './priceParamsArb'
 
-export const getFairpoolArb = (contract: Address, users: Address[]) => record({
+export const getFairpoolArb = (contract: EthAddress, users: EthAddress[]) => record({
   priceParams: priceParamsArb,
   shares: getSharesArb(users)(1),
   owner: constantFrom(...users),
@@ -20,7 +20,7 @@ export const getFairpoolArb = (contract: Address, users: Address[]) => record({
   ...fairpool.distributionParams,
 }))
 
-export const getFairpoolZeroSharesArb = (contract: Address, users: Address[]) => getFairpoolArb(contract, users).map(f => ({
+export const getFairpoolZeroSharesArb = (contract: EthAddress, users: EthAddress[]) => getFairpoolArb(contract, users).map(f => ({
   ...f,
   shares: [],
 }))

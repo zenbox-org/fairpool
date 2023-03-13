@@ -1,7 +1,8 @@
 import { assert } from '../../../utils/bigint/BigIntBasicArithmetic'
 import { isEqualBy } from '../../../utils/lodash'
 import { getAmountD, getTotalSupply } from '../helpers'
-import { Balance, Fairpool, getBaseSupplyF, getQuoteSupplyF } from '../uni'
+import { Balance as ImBalance } from '../models/Balance'
+import { Fairpool, getBaseSupplyF, getQuoteSupplyF } from '../uni'
 import { validateBalances } from './validateBalance'
 import { validateFairpoolShares } from './validateFairpoolShares'
 import { validatePricingParams } from './validatePricingParams'
@@ -24,7 +25,7 @@ export const validateFairpool = (fairpoolIn: Fairpool) => {
   return fairpool
 }
 
-export const validateFairpoolFull = (quoteBalances: Balance[]) => (fairpoolIn: Fairpool) => {
+export const validateFairpoolFull = (quoteBalances: ImBalance[]) => (fairpoolIn: Fairpool) => {
   const fairpool = validateFairpool(fairpoolIn)
   const quoteSupplyActual = fairpool.quoteSupply
   const quoteSupplyTallies = getTotalSupply(fairpool.tallies)
@@ -43,6 +44,6 @@ export const isFairpool = (value: unknown): value is Fairpool => {
   }
 }
 
-export const validateFairpools = (quoteBalances: Balance[]) => (fairpools: Fairpool[]) => {
+export const validateFairpools = (quoteBalances: ImBalance[]) => (fairpools: Fairpool[]) => {
   return fairpools.map(validateFairpoolFull(quoteBalances))
 }

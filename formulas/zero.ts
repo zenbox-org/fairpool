@@ -6,12 +6,13 @@ import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
 import { isLogEnabled } from '../../utils/debug'
 import { baseLimitMin, holdersPerDistributionMaxFixed, quoteOffsetMin, scaleFixed } from './constants'
 import { getExperimentOutputMin } from './experiments'
+import { getPercentScaledQuotient } from './helpers/scale'
+import { Balance as ImBalance } from './models/Balance'
 import { BigIntQuotientFunctions } from './models/bigint/BigIntQuotientFunctions'
-import { Balance, Blockchain, Fairpool } from './uni'
+import { Blockchain, Fairpool } from './uni'
 import { validateBalance } from './validators/validateBalance'
 import { validateFairpoolFull } from './validators/validateFairpool'
 import { validatePricingParams } from './validators/validatePricingParams'
-import { getPercentScaledQuotient } from './helpers/scale'
 
 const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
 const { halve, sum, getShare } = BigIntBasicOperations
@@ -58,7 +59,7 @@ export const fairpoolZero: Fairpool = validateFairpoolFull([])({
 
 assert.eq(getPercentScaledQuotient(25n, 1000n).numerator, 25000n, 'getPercentScaledQuotient(10n).numerator', '100000n')
 
-export const balancesZero: Balance[] = []
+export const balancesZero: ImBalance[] = []
 
 export const blockchainZero: Blockchain = {
   balances: balancesZero,

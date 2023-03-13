@@ -1,6 +1,7 @@
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
 import { zip } from 'remeda'
-import { Address, Beneficiary } from '../uni'
+import { Address } from '../../../ethereum/models/Address'
+import { Beneficiary } from '../uni'
 import { getScaledValuesArb } from './getScaledValuesArb'
 
 export const getBeneficiariesArb = (addresses: Address[]): Arbitrary<Beneficiary[]> => {

@@ -1,5 +1,5 @@
+import { Address as EthAddress } from '../../../../ethereum/models/Address'
 import { Quotient } from '../../../../utils/Quotient'
-import { Address } from '../../uni'
 
 export interface GetTalliesDeltasFromHoldersConfig {
   type: 'GetTalliesDeltasFromHoldersConfig'
@@ -7,14 +7,14 @@ export interface GetTalliesDeltasFromHoldersConfig {
 
 export interface GetTalliesDeltasFromRecipientConfig {
   type: 'GetTalliesDeltasFromRecipientConfig'
-  address: Address
+  address: EthAddress
 }
 
 export interface GetTalliesDeltasFromReferralsConfig {
   type: 'GetTalliesDeltasFromReferralsConfig'
   discount: Quotient<bigint>
-  referralsMap: Record<Address, Address>
-  isRecognizedReferralMap: Record<Address, boolean>
+  referralsMap: Record<EthAddress, EthAddress>
+  isRecognizedReferralMap: Record<EthAddress, boolean>
 }
 
 export type GetTalliesDeltaConfig = GetTalliesDeltasFromHoldersConfig | GetTalliesDeltasFromRecipientConfig | GetTalliesDeltasFromReferralsConfig
