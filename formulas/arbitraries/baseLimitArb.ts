@@ -1,7 +1,8 @@
 import { bigInt } from 'fast-check'
-import { baseLimitMax, baseLimitMin } from '../constants'
+import { parseBaseLimit } from '../models/BaseLimit'
+import { baseLimitMax, baseLimitMin } from '../models/BaseLimit/constants'
 
 export const baseLimitArb = bigInt({
   min: baseLimitMin,
   max: baseLimitMax,
-})
+}).map(parseBaseLimit)

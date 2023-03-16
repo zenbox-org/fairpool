@@ -1,5 +1,5 @@
 import { bigInt } from 'fast-check'
-import { priceParamMax, priceParamMin } from '../constants'
+import { priceParamMax, priceParamMin } from '../models/PriceParam/constants'
 
 export const priceParamArb = bigInt({
   min: priceParamMin,

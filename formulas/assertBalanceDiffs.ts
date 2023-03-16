@@ -1,16 +1,16 @@
 import { uniqWith } from 'remeda'
-import { Address as EthAddress } from '../../ethereum/models/Address'
+import { Address as Address } from '../../ethereum/models/Address'
 import { getFintGenTupleKey } from '../../finance/models/FintGenTuple/getFintGenTupleKey'
-import { BigIntAllAssertions } from '../../utils/bigint/BigIntBasicArithmetic'
+import { BigIntAllAssertions } from '../../utils/bigint/BigIntAllAssertions'
 import { isEqualBy } from '../../utils/lodash'
-import { getAmountD } from './helpers'
+import { getAmountD } from './helpers/getAmount'
 import { Amount } from './models/Amount'
-import { Balance as ImBalance } from './models/Balance'
-import { State } from './uni'
+import { Balance } from './models/Balance'
+import { State } from './models/State' // type Source = 'base' | 'quote'
 
 // type Source = 'base' | 'quote'
-type BalanceGetter = (state: State) => ImBalance[]
-type AssertBalanceTuple = [EthAddress, BalanceGetter, Amount]
+type BalanceGetter = (state: State) => Balance[]
+type AssertBalanceTuple = [Address, BalanceGetter, Amount]
 
 const assert = BigIntAllAssertions
 

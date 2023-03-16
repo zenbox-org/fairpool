@@ -1,10 +1,18 @@
-import { z } from 'zod'
-import { getArraySchema } from 'libs/utils/zod'
 import { isEqualByDC } from 'libs/utils/lodash'
-import { BuySchema } from './Buy'
+import { getArraySchema } from 'libs/utils/zod'
+import { z } from 'zod'
+import { AddShareSchema } from './BaseAction/AddShare'
+import { BuySchema } from './BaseAction/Buy'
+import { SellSchema } from './BaseAction/Sell'
+import { SetShareNumeratorSchema } from './BaseAction/SetShareNumerator'
+import { NoopSchema } from './Noop'
 
-export const ActionSchema = z.discriminatedUnion('name', [
+export const ActionSchema = z.discriminatedUnion('type', [
+  NoopSchema,
   BuySchema,
+  SellSchema,
+  AddShareSchema,
+  SetShareNumeratorSchema,
 ]).describe('Action')
 
 export const ActionUidSchema = ActionSchema
@@ -14,6 +22,8 @@ export const ActionsSchema = getArraySchema(ActionSchema, parseActionUid)
 export type Action = z.infer<typeof ActionSchema>
 
 export type ActionUid = z.infer<typeof ActionUidSchema>
+
+export type ActionType = Action['type']
 
 export function parseAction(action: Action): Action {
   return ActionSchema.parse(action)

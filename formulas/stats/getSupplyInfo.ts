@@ -3,7 +3,8 @@ import { identity } from 'remeda'
 import { Mutator } from '../../../generic/models/Mutator'
 import { rangeBigInt } from '../../../utils/remeda/rangeBigInt'
 import { toString } from '../../../utils/string'
-import { getBaseSupply, getQuoteSupply, PriceParams } from '../uni'
+import { getBaseSupply, getQuoteSupply } from '../helpers/getSupply'
+import { PriceParams } from '../models/PriceParams'
 
 interface ValueStat { value: bigint, valueEnc: bigint, valueEncDec: bigint, diff: bigint, isOptimal: boolean }
 interface SupplyStat {baseSupply: ValueStat, quoteSupply: ValueStat}

@@ -1,5 +1,7 @@
-import { Balance as ImBalance } from './models/Balance'
-import { Blockchain, Fairpool, State } from './uni'
+import { Balance } from './models/Balance'
+import { Blockchain } from './models/Blockchain'
+import { Fairpool } from './models/Fairpool'
+import { State } from './models/State'
 
 export const cleanState = ({ fairpools, blockchain }: State): State => ({
   fairpools: cleanFairpools(fairpools),
@@ -22,4 +24,4 @@ const cleanFairpool = (fairpool: Fairpool): Fairpool => ({
 /**
  * Filter out empty balances
  */
-const cleanBalances = (balances: ImBalance[]) => balances.filter(b => b.amount != 0n)
+const cleanBalances = (balances: Balance[]) => balances.filter(b => b.amount != 0n)

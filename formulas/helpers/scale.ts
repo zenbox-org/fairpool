@@ -1,6 +1,6 @@
-import { scaleFixed } from '../constants'
+import { getShare } from '../../../utils/bigint/BigIntAdvancedOperations'
 import { parseQuotientGenBigInt } from '../../../utils/Quotient'
-import { getShare } from '../../../utils/bigint/BigIntBasicOperations'
+import { scaleFixed } from '../models/Fairpool/constants'
 
 export const getPercentOfScale = (numerator: bigint, denominator = 100n) => getShare(denominator)(numerator)(scaleFixed)
 

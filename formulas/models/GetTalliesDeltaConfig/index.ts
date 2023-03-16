@@ -1,23 +1,32 @@
-import { Address as EthAddress } from '../../../../ethereum/models/Address'
-import { Quotient } from '../../../../utils/Quotient'
+import { isEqualSC } from 'libs/utils/lodash'
+import { getArraySchema } from 'libs/utils/zod'
+import { identity } from 'remeda'
+import { literal, z } from 'zod'
+import { GetTalliesDeltasFromHoldersConfig, GetTalliesDeltasFromHoldersConfigSchema } from './GetTalliesDeltasFromHoldersConfig'
+import { GetTalliesDeltasFromRecipientConfig, GetTalliesDeltasFromRecipientConfigSchema } from './GetTalliesDeltasFromRecipientConfig'
+import { GetTalliesDeltasFromReferralsConfigSchema } from './GetTalliesDeltasFromReferralsConfig'
 
-export interface GetTalliesDeltasFromHoldersConfig {
-  type: 'GetTalliesDeltasFromHoldersConfig'
-}
+export const GetTalliesDeltaConfigSchema = z.discriminatedUnion('type', [
+  GetTalliesDeltasFromHoldersConfigSchema.extend({
+    type: literal('GetTalliesDeltasFromHoldersConfig'),
+  }),
+  GetTalliesDeltasFromReferralsConfigSchema.extend({
+    type: literal('GetTalliesDeltasFromReferralsConfig'),
+  }),
+  GetTalliesDeltasFromRecipientConfigSchema.extend({
+    type: literal('GetTalliesDeltasFromRecipientConfig'),
+  }),
+]).describe('GetTalliesDeltaConfig')
 
-export interface GetTalliesDeltasFromRecipientConfig {
-  type: 'GetTalliesDeltasFromRecipientConfig'
-  address: EthAddress
-}
+export const GetTalliesDeltaConfigsSchema = getArraySchema(GetTalliesDeltaConfigSchema, identity)
 
-export interface GetTalliesDeltasFromReferralsConfig {
-  type: 'GetTalliesDeltasFromReferralsConfig'
-  discount: Quotient<bigint>
-  referralsMap: Record<EthAddress, EthAddress>
-  isRecognizedReferralMap: Record<EthAddress, boolean>
-}
+export type GetTalliesDeltaConfig = z.infer<typeof GetTalliesDeltaConfigSchema>
 
-export type GetTalliesDeltaConfig = GetTalliesDeltasFromHoldersConfig | GetTalliesDeltasFromRecipientConfig | GetTalliesDeltasFromReferralsConfig
+export const parseGetTalliesDeltaConfig = (config: GetTalliesDeltaConfig): GetTalliesDeltaConfig => GetTalliesDeltaConfigSchema.parse(config)
+
+export const parseGetTalliesDeltaConfigs = (configs: GetTalliesDeltaConfig[]): GetTalliesDeltaConfig[] => GetTalliesDeltaConfigsSchema.parse(configs)
+
+export const isEqualGetTalliesDeltaConfig = isEqualSC
 
 export const getTalliesDeltaConfigTypes: GetTalliesDeltaConfig['type'][] = [
   'GetTalliesDeltasFromHoldersConfig',

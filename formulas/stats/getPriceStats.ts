@@ -2,7 +2,10 @@ import { getDeltas } from '../../../utils/arithmetic/getDeltas'
 import { BigIntBasicArithmetic } from '../../../utils/bigint/BigIntBasicArithmetic'
 import { stringify } from '../../../utils/JSON'
 import { rangeBigInt } from '../../../utils/remeda/rangeBigInt'
-import { Fairpool, getBaseSupply, getFairpoolFun, getPricingParamsFromFairpool } from '../uni'
+import { getPricingParamsFromFairpool } from '../contract'
+import { getPriceParamsFun } from '../helpers/getPriceParamsFun'
+import { getBaseSupply } from '../helpers/getSupply'
+import { Fairpool } from '../models/Fairpool'
 
 export const getPriceStats = (baseLimit: bigint, quoteOffset: bigint) => (quoteSupplyFrom: bigint, quoteSupplyTo: bigint) => {
   const quoteSupplyArr = rangeBigInt(quoteSupplyFrom, quoteSupplyTo)
@@ -10,7 +13,7 @@ export const getPriceStats = (baseLimit: bigint, quoteOffset: bigint) => (quoteS
   return getDeltas(BigIntBasicArithmetic)(baseSupplyArr)
 }
 
-export const getPriceStatsF = getFairpoolFun(getPriceStats)
+export const getPriceStatsF = getPriceParamsFun(getPriceStats)
 
 export const getPricesStatsString = (fairpool: Fairpool) => (quoteSupplyFrom: bigint, quoteSupplyTo: bigint) => {
   const prices = getPriceStatsF(fairpool)(quoteSupplyFrom, quoteSupplyTo)

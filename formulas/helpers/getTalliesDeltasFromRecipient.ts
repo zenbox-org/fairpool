@@ -1,7 +1,8 @@
-import { GetTalliesDeltasFromRecipientConfig } from '../models/GetTalliesDeltaConfig'
+import { Address } from '../models/Address'
+import { Fairpool } from '../models/Fairpool'
+import { GetTalliesDeltasFromRecipientConfig } from '../models/GetTalliesDeltaConfig/GetTalliesDeltasFromRecipientConfig'
+import { GetTalliesDeltaParams } from '../models/GetTalliesDeltaParams'
 import { TalliesDelta } from '../models/TalliesDelta'
-import { Fairpool, GetTalliesDeltaParams } from '../uni'
-import { Address } from '../../../ethereum/models/Address'
 
 export const getTalliesDeltasFromRecipient = (config: GetTalliesDeltasFromRecipientConfig) => (fairpool: Fairpool, sender: Address, params: GetTalliesDeltaParams) => (quoteDistributed: bigint): TalliesDelta[] => {
   return [{

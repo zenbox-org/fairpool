@@ -1,12 +1,12 @@
-import { z } from 'zod'
-import { getArraySchema } from 'libs/utils/zod'
 import { isEqualByDC } from 'libs/utils/lodash'
-import { AddressSchema } from '../../../../ethereum/models/Address'
+import { getArraySchema } from 'libs/utils/zod'
+import { z } from 'zod'
 import { Uint256BigIntSchema } from '../../../../ethereum/models/Uint256BigInt'
+import { AddressSchema } from '../Address'
 
 export const BalanceDeltaSchema = z.object({
   address: AddressSchema,
-  amount: Uint256BigIntSchema, // using an unsigned integer for amount delta because all amount deltas must be positive (only added)
+  amount: Uint256BigIntSchema.gt(0n, 'Delta amount must be gte 0n'), // using an unsigned integer for amount delta because all amount deltas must be positive (only added)
 }).describe('BalanceDelta')
 
 export const BalanceDeltaUidSchema = BalanceDeltaSchema // allow repeating addresses

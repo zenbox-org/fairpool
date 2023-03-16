@@ -1,13 +1,13 @@
-import { z } from 'zod'
-import { getArraySchema } from 'libs/utils/zod'
 import { isEqualByDC } from 'libs/utils/lodash'
-import { StateSchema } from '../../../api/models/State'
+import { getArraySchema } from 'libs/utils/zod'
+import { z } from 'zod'
 import { ActionSchema } from '../Action'
+import { StateSchema } from '../State'
 
 export const TransitionSchema = z.object({
+  action: ActionSchema,
   prev: StateSchema,
   next: StateSchema,
-  action: ActionSchema,
 }).describe('Transition')
 
 export const TransitionUidSchema = TransitionSchema.pick({

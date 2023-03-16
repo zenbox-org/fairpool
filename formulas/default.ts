@@ -1,12 +1,14 @@
+import { BigIntAdvancedOperations } from '../../utils/bigint/BigIntAdvancedOperations'
 import { BigIntBasicArithmetic } from '../../utils/bigint/BigIntBasicArithmetic'
-import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
-import { quoteOffsetMin, scaleFixed } from './constants'
-import { Fairpool, getQuoteDeltaMinF, State } from './uni'
-import { validateFairpoolFull } from './validators/validateFairpool'
-import { balancesZero, blockchainZero, fairpoolZero } from './zero'
+import { getQuoteDeltaMinF } from './contract'
+import { parseFairpool } from './models/Fairpool'
+import { scaleFixed } from './models/Fairpool/constants'
+import { quoteOffsetMin } from './models/QuoteOffset/constants'
+import { State } from './models/State'
+import { blockchainZero, fairpoolZero } from './zero'
 
-const { zero, one, num, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
-const { sum, sumAmounts, halve, clamp, clampIn, getShare, getDeltas } = BigIntBasicOperations
+const { zero, one, fromNumber, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
+const { sum, sumAmounts, halve, clamp, clampIn, getShare, getDeltas } = BigIntAdvancedOperations
 
 export const usersDefault = ['alice', 'bob', 'sam', 'ted', 'owner']
 
@@ -20,19 +22,16 @@ export const [base, quote] = assetsDefault
 
 export const getShareScaledDefault = getShare(scaleFixed)
 
-export const getShareScaledDefaultPips = getShareScaledDefault(num(10000))
+export const getShareScaledDefaultPips = getShareScaledDefault(fromNumber(10000))
 
-export const fairpoolDefault: Fairpool = validateFairpoolFull(balancesZero)({
+export const fairpoolDefault = parseFairpool({
   ...fairpoolZero,
   quoteOffset: 2n * quoteOffsetMin,
   address: contract,
   quoteSupply: zero,
   owner: sam,
   operator: ted,
-  royalties: getShareScaledDefaultPips(num(2000)),
-  earnings: getShareScaledDefaultPips(num(7500)),
-  fees: getShareScaledDefaultPips(num(2500)),
-  holdersPerDistributionMax: num(256),
+  holdersPerDistributionMax: 256n,
 })
 
 export const stateDefault: State = {

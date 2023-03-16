@@ -1,5 +1,5 @@
-import { scaleFixed } from '../constants'
 import { BigIntQuotientFunctions } from '../models/bigint/BigIntQuotientFunctions'
+import { scaleFixed } from '../models/Fairpool/constants'
 import { getNumeratorsArb } from './getNumeratorsArb'
 
 export const getScaledValuesArb = (length: number) => {

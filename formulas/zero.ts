@@ -1,69 +1,54 @@
 import { writeFile } from 'fs/promises'
 import { ZeroAddress } from '../../ethereum/data/allAddresses'
-import { getGenMutilatorsWithAmount } from '../../finance/models/FintGen/getGenMutilatorsWithAmount'
-import { BigIntAllAssertions, BigIntBasicArithmetic } from '../../utils/bigint/BigIntBasicArithmetic'
-import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
 import { isLogEnabled } from '../../utils/debug'
-import { baseLimitMin, holdersPerDistributionMaxFixed, quoteOffsetMin, scaleFixed } from './constants'
 import { getExperimentOutputMin } from './experiments'
-import { getPercentScaledQuotient } from './helpers/scale'
-import { Balance as ImBalance } from './models/Balance'
-import { BigIntQuotientFunctions } from './models/bigint/BigIntQuotientFunctions'
-import { Blockchain, Fairpool } from './uni'
-import { validateBalance } from './validators/validateBalance'
-import { validateFairpoolFull } from './validators/validateFairpool'
-import { validatePricingParams } from './validators/validatePricingParams'
-
-const { zero, one, num, add, sub, mul, div, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
-const { halve, sum, getShare } = BigIntBasicOperations
-const { getQuotientsFromNumberNumerators, getBoundedArrayFromQuotients, getValuesFromNumerators } = BigIntQuotientFunctions
-const { addB, subB, mulB, divB, sendB } = getGenMutilatorsWithAmount(BigIntBasicArithmetic)
-const assert = BigIntAllAssertions
+import { parseBalance, parseBalances } from './models/Balance'
+import { baseLimitMin } from './models/BaseLimit/constants'
+import { parseBlockchain } from './models/Blockchain'
+import { parseFairpool } from './models/Fairpool'
+import { holdersPerDistributionMaxFixed, scaleFixed } from './models/Fairpool/constants'
+import { parseHieroShares } from './models/HieroShare'
+import { parsePriceParams } from './models/PriceParams'
+import { quoteOffsetMin } from './models/QuoteOffset/constants'
+import { parseShares } from './models/Share'
 
 if (isLogEnabled) await writeFile('/tmp/stats', getExperimentOutputMin())
 
-export const balanceZero = validateBalance({
+export const balanceZero = parseBalance({
   address: ZeroAddress,
-  amount: zero,
+  amount: 0n,
 })
 
-export const pricingParamsZero = validatePricingParams({
+export const priceParamsZero = parsePriceParams({
   baseLimit: baseLimitMin,
   quoteOffset: quoteOffsetMin,
 })
 
-export const fairpoolZero: Fairpool = validateFairpoolFull([])({
+export const balancesZero = parseBalances([])
+
+export const talliesZero = parseBalances([])
+
+export const hieroSharesZero = parseHieroShares([])
+
+export const sharesZero = parseShares([])
+
+export const fairpoolZero = parseFairpool({
   address: ZeroAddress,
-  ...pricingParamsZero,
-  balances: [],
-  tallies: [],
-  quoteSupply: zero,
-  shares: [
-    // {
-    //   rootNumerator: getPercentOfScale(10n),
-    //   rootReferralNumerator: 0n,
-    //   rootDiscountNumerator: 0n,
-    //   referralsMap: {},
-    //   isRecognizedReferralMap: {},
-    // },
-  ],
+  ...priceParamsZero,
+  balances: balancesZero,
+  tallies: talliesZero,
+  quoteSupply: 0n,
+  shares: sharesZero,
   scale: scaleFixed,
   seed: 0n,
   owner: ZeroAddress,
   operator: ZeroAddress,
-  royalties: 0n,
-  earnings: 0n,
-  fees: 0n,
   holdersPerDistributionMax: holdersPerDistributionMaxFixed,
 })
 
-assert.eq(getPercentScaledQuotient(25n, 1000n).numerator, 25000n, 'getPercentScaledQuotient(10n).numerator', '100000n')
-
-export const balancesZero: ImBalance[] = []
-
-export const blockchainZero: Blockchain = {
+export const blockchainZero = parseBlockchain({
   balances: balancesZero,
-}
+})
 
 // const getTalliesDeltasWithReferrals: GetTalliesDeltasHierarchical = todo()
 

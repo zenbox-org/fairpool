@@ -1,7 +1,7 @@
-import { z } from 'zod'
-import { getArraySchema } from 'libs/utils/zod'
 import { isEqualByDC } from 'libs/utils/lodash'
-import { AddressSchema } from '../../../../ethereum/models/Address'
+import { getArraySchema } from 'libs/utils/zod'
+import { z } from 'zod'
+import { AddressSchema } from '../Address'
 import { AmountSchema } from '../Amount'
 
 export const BalanceSchema = z.object({

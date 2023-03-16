@@ -1,8 +1,10 @@
 import { tuple } from 'fast-check'
 import { toSortedBaseLimitQuoteOffset } from '../helpers/toSortedBaseLimitQuoteOffset'
-import { priceParamArb } from './priceParamArb'
+import { parsePriceParams } from '../models/PriceParams'
+import { baseLimitArb } from './baseLimitArb'
+import { quoteOffsetArb } from './quoteOffsetArb'
 
-export const priceParamsArb = tuple(priceParamArb, priceParamArb).map(toSortedBaseLimitQuoteOffset).map(([baseLimit, quoteOffset]) => ({
+export const priceParamsArb = tuple(baseLimitArb, quoteOffsetArb).map(toSortedBaseLimitQuoteOffset).map(([baseLimit, quoteOffset]) => parsePriceParams({
   baseLimit,
   quoteOffset,
 }))

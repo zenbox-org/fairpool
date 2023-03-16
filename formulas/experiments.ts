@@ -1,9 +1,10 @@
 import { pipe } from 'remeda'
-import { BigIntBasicOperations } from '../../utils/bigint/BigIntBasicOperations'
-import { baseLimitMin, quoteOffsetMin } from './constants'
+import { BigIntAdvancedOperations } from '../../utils/bigint/BigIntAdvancedOperations'
+import { baseLimitMin } from './models/BaseLimit/constants'
+import { quoteOffsetMin } from './models/QuoteOffset/constants'
 import { getSupplyInfo, toStringSupplyInfo } from './stats/getSupplyInfo'
 
-const { clamp } = BigIntBasicOperations
+const { clamp } = BigIntAdvancedOperations
 
 // const scale = 10n ** 18n
 const scale = 1n

@@ -1,26 +1,23 @@
 import { concat } from 'remeda'
-import { assertByUnary } from '../../../utils/assert'
-import { BigIntBasicArithmetic, BigIntBasicValidations } from '../../../utils/bigint/BigIntBasicArithmetic'
-import { BigIntBasicOperations } from '../../../utils/bigint/BigIntBasicOperations'
+import { BigIntAdvancedOperations } from '../../../utils/bigint/BigIntAdvancedOperations'
+import { BigIntBasicArithmetic } from '../../../utils/bigint/BigIntBasicArithmetic'
+import { Address } from '../models/Address'
+import { Fairpool } from '../models/Fairpool'
 import { GetTalliesDeltaConfig } from '../models/GetTalliesDeltaConfig'
+import { GetTalliesDeltaParams } from '../models/GetTalliesDeltaParams'
 import { HieroShare } from '../models/HieroShare'
 import { TalliesDelta } from '../models/TalliesDelta'
-import { Fairpool, GetTalliesDeltaParams } from '../uni'
 import { getTalliesDeltasFromHolders } from './getTalliesDeltasFromHolders'
 import { getTalliesDeltasFromRecipient } from './getTalliesDeltasFromRecipient'
 import { getTalliesDeltasFromReferrals } from './getTalliesDeltasFromReferrals'
-import { Address } from '../../../ethereum/models/Address'
 
 const { mod } = BigIntBasicArithmetic
-const { clampIn, getShare, getQuotientOf, sumAmounts } = BigIntBasicOperations
-const { isValidQuotientSum } = BigIntBasicValidations
+const { clampIn, getShare, getQuotientOf, sumAmounts } = BigIntAdvancedOperations
 
 // const offset = c.getRandomNumber(Number(fairpool.seed))
 // const step = c.getRandomNumber(Number(fairpool.seed))
 
 export const getTalliesDeltasFromHieroShares = (fairpool: Fairpool, sender: Address, params: GetTalliesDeltaParams) => (shares: HieroShare[]) => (quoteDistributed: bigint): TalliesDelta[] => {
-  const quotients = shares.map(l => l.quotient)
-  assertByUnary(isValidQuotientSum)(quotients, 'quotients')
   return shares.flatMap(({ getTalliesDeltaConfig, quotient, children }) => {
     const quoteDistributedLocal = getQuotientOf(quotient)(quoteDistributed)
     const deltasChildren = getTalliesDeltasFromHieroShares(fairpool, sender, params)(children)(quoteDistributedLocal)

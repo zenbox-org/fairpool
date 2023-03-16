@@ -29,6 +29,55 @@ We want Y > X because 100 ETH > 1 ETH (Bob's purchase in Scenario 2 is larger).
 
 In other words, if the contract is filled with ETH already, the speculators can make more profit (a higher portion of Sam's purchase becomes Alice's profit).
 
+## Distribution
+
+When a user sells the tokens, the base & quote balances of the contract are reduced. 
+
+* `baseSupplyNext = baseSupplyPrev - baseDelta`.
+* `quoteSupplyNext = quoteSupplyPrev - quoteDelta`
+
+Notes:
+
+* `baseDelta` is a parameter of the `sell` function
+* `quoteDelta` is calculated dynamically in the `sell` function using `quoteSupply` function:
+  * `quoteSupplyPrev = quoteSupply(baseSupplyPrev)`
+  * `quoteSupplyNext = quoteSupply(baseSupplyNext)`
+  * `quoteDelta = quoteSupplyPrev - quoteSupplyNext`
+
+### Principles
+
+* `quoteDelta` must be distributed between multiple parties
+* `quoteDelta` must be distributed by incrementing `tallies[address]`, not by transferring directly to address
+  * Rationales
+    * Lower gas cost
+    * Higher security (every transfer is a potential call to an external smart contract)
+* Seller must receive a non-zero quote amount
+* Share recipients must be able to change the share values within bounds
+  * Share values must have bounds
+* Share recipients must be able to reduce the bounds (increase minimum bounds, decrease maximum bounds)
+  * Rationale
+    * Share recipients must be able to show that they are not going to change the shares too much (in a way that would make the contract unusable)
+* Share recipients must not be able to improve the share values (change the share values in a way that increases  future quote amounts received)
+* Share non-recipients must not be able to hinder the share values (change the share values in a way that decreases future quote amounts received)
+* Share recipients must be able to temporarily hinder the share values
+  * Share recipients must be able to hinder the share values & improve them back to the same values in the future
+  * Rationale
+    * Do a promo: temporarily lower their share to attract traders
+* Nobody must be able to brick the distribution (change the share values in a way that the distribution runs out of gas)
+  * Every array must be bounded
+  * Every array bound must be non-increasing
+* Signatures must not be reusable in future
+  * Signatures must contain a `deadline` field with the timestamp of max signature validity
+* Share owners must be able to change their own address
+* Distribution must happen according to shares
+* Shares must be hierarchical: it should be possible to add a share whose final amount depends on another share
+* Share owner must be able to change its properties
+  * Set its `numerator`
+* Share owner must be able to reduce the bounds for changing its properties
+* Parent share owner must be able to increase the child share bounds
+* Share `numerator` must be within bounds (`numeratorMax`, `numeratorMin`)
+* Share owner must not be able to set its quotient to 
+
 ## baseDelta and quoteDelta
 
 ```typescript

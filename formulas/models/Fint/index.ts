@@ -1,7 +1,7 @@
 import { FintGen, FintGenTuple } from '../../../../finance/models/FintGen'
-import { Address } from '../../../../ethereum/models/Address'
-import { Asset } from '../Asset'
+import { Address } from '../Address'
 import { Amount } from '../Amount'
+import { Asset } from '../Asset'
 
 export type Fint = FintGen<Address, Asset, Amount>
 

@@ -1,7 +1,7 @@
-import { z } from 'zod'
 import { getArraySchema } from 'libs/utils/zod'
+import { equals } from 'remeda'
+import { z } from 'zod'
 import { Uint256BigIntSchema } from '../../../../ethereum/models/Uint256BigInt'
-import { eq } from '../../../../utils/lodash'
 
 export const AmountSchema = Uint256BigIntSchema.describe('Amount')
 
@@ -17,4 +17,4 @@ export function parseAmounts(amounts: Amount[]): Amount[] {
   return AmountsSchema.parse(amounts)
 }
 
-export const isEqualAmount = eq
+export const isEqualAmount = equals

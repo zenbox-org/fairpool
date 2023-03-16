@@ -1,7 +1,7 @@
 import { record } from 'fast-check'
 import { clampBaseDeltaRawByState } from '../helpers/clampBaseDeltaRaw'
-import { stateArb } from '../uni.test'
 import { baseDeltaRawArb } from './baseDeltaRawArb'
+import { stateArb } from './stateArb'
 
 export const stateWithBaseDeltaArb = record({
   state: stateArb,
