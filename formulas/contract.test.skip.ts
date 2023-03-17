@@ -2,9 +2,10 @@ import { expect, test } from '@jest/globals'
 import { bigInt, record } from 'fast-check'
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
 import { Address } from 'libs/ethereum/models/Address'
-import { every } from 'lodash-es'
 import { createPipe, isError, last, map, sort, times, zip } from 'remeda'
 import { validateTransition } from '../../divide-and-conquer/models/ParserTransition/parseTransitionViaFilters'
+import { testArbImplyTwoSym } from '../../divide-and-conquer/models/Prop/testArb'
+import { and } from '../../generic/models/Filter'
 import { Mutator, MutatorV } from '../../generic/models/Mutator'
 import { BigIntArrayComparisons } from '../../utils/arithmetic/order'
 import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
@@ -41,9 +42,6 @@ import { getAmountD } from './helpers/getAmount'
 import { getBaseSupply, getQuoteSupply } from './helpers/getSupply'
 import { Action } from './models/Action'
 import { Buy } from './models/Action/BaseAction/Buy'
-import { Sell } from './models/Action/BaseAction/Sell'
-import { isEqualBase } from './models/Action/isEqualBase'
-import { getAmountBase } from './models/Amount/getAmount'
 import { Balance } from './models/Balance'
 import { getBalancesBase, getBalancesQuote } from './models/Balance/getBalances'
 import { getBalanceD } from './models/Balance/helpers'
@@ -52,6 +50,9 @@ import { BigIntQuotientFunctions } from './models/bigint/BigIntQuotientFunctions
 import { Fairpool } from './models/Fairpool'
 import { PrePriceParams } from './models/PrePriceParams'
 import { Shift } from './models/Shift'
+import { contractHasExternalShares } from './models/Shift/contractHasExternalShares'
+import { isBuySellCycle } from './models/Shift/isBuySellCycle'
+import { isDecreasedUserBalance } from './models/Shift/isDecreasedUserBalance'
 import { parseState, State } from './models/State'
 import { parseTransition } from './models/Transition'
 
@@ -529,23 +530,6 @@ testFun.skip(async function assertTransitionsAreValid() {
 
 // in a contract with non-zero external shares a buy-sell cycle must lead to a decreased quote balance of user
 // getQuoteAmount(sender)(started) > getQuoteAmount(sender)(sold),
-// testArbImplyTwoSym(and([hasExternalShares, isBuySellCycle]), isDecreasedUserBalance)(history())
+const history = () => todo<Arbitrary<Shift[]>>()
 
-interface AnyShift extends Shift {}
-interface BuyShift extends Shift { action: Buy }
-interface SellShift extends Shift { action: Sell }
-
-type AnyBuySellHistory = [AnyShift, BuyShift, SellShift]
-
-const isBuySellCycle = (history: AnyBuySellHistory) => {
-  const [{ state: started }, { action: buy, state: bought }, { action: sell, state: sold }] = history
-  const { contract, sender } = buy
-  return every([
-    isEqualBase(buy)(sell),
-    getAmountBase(sender)(started) === getAmountBase(sender)(sold),
-  ])
-}
-
-const hasExternalShares = (fairpool: Fairpool) => (sender: Address) => todo()
-
-export const getBaseBalanceDelta = (sender: Address) => (contract: Address) => (a: State, b: State) => todo()
+testArbImplyTwoSym(and([contractHasExternalShares, isBuySellCycle]), isDecreasedUserBalance)(history())

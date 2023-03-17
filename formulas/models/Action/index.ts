@@ -5,10 +5,9 @@ import { AddShareSchema } from './BaseAction/AddShare'
 import { BuySchema } from './BaseAction/Buy'
 import { SellSchema } from './BaseAction/Sell'
 import { SetShareNumeratorSchema } from './BaseAction/SetShareNumerator'
-import { NoopSchema } from './Noop'
 
 export const ActionSchema = z.discriminatedUnion('type', [
-  NoopSchema,
+  // NoopSchema,
   BuySchema,
   SellSchema,
   AddShareSchema,

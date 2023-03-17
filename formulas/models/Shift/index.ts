@@ -5,8 +5,8 @@ import { ActionSchema } from '../Action'
 import { StateSchema } from '../State'
 
 export const ShiftSchema = z.object({
-  action: ActionSchema,
   state: StateSchema,
+  action: ActionSchema,
 }).describe('Shift')
 
 export const ShiftUidSchema = ShiftSchema.pick({

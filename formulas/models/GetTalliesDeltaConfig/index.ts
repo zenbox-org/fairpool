@@ -1,21 +1,17 @@
 import { isEqualSC } from 'libs/utils/lodash'
 import { getArraySchema } from 'libs/utils/zod'
 import { identity } from 'remeda'
-import { literal, z } from 'zod'
+import { z } from 'zod'
 import { GetTalliesDeltasFromHoldersConfig, GetTalliesDeltasFromHoldersConfigSchema } from './GetTalliesDeltasFromHoldersConfig'
 import { GetTalliesDeltasFromRecipientConfig, GetTalliesDeltasFromRecipientConfigSchema } from './GetTalliesDeltasFromRecipientConfig'
 import { GetTalliesDeltasFromReferralsConfigSchema } from './GetTalliesDeltasFromReferralsConfig'
+import { GetTalliesDeltasFromSenderConfigSchema } from './GetTalliesDeltasFromSenderConfig'
 
 export const GetTalliesDeltaConfigSchema = z.discriminatedUnion('type', [
-  GetTalliesDeltasFromHoldersConfigSchema.extend({
-    type: literal('GetTalliesDeltasFromHoldersConfig'),
-  }),
-  GetTalliesDeltasFromReferralsConfigSchema.extend({
-    type: literal('GetTalliesDeltasFromReferralsConfig'),
-  }),
-  GetTalliesDeltasFromRecipientConfigSchema.extend({
-    type: literal('GetTalliesDeltasFromRecipientConfig'),
-  }),
+  GetTalliesDeltasFromSenderConfigSchema,
+  GetTalliesDeltasFromHoldersConfigSchema,
+  GetTalliesDeltasFromReferralsConfigSchema,
+  GetTalliesDeltasFromRecipientConfigSchema,
 ]).describe('GetTalliesDeltaConfig')
 
 export const GetTalliesDeltaConfigsSchema = getArraySchema(GetTalliesDeltaConfigSchema, identity)
@@ -29,6 +25,7 @@ export const parseGetTalliesDeltaConfigs = (configs: GetTalliesDeltaConfig[]): G
 export const isEqualGetTalliesDeltaConfig = isEqualSC
 
 export const getTalliesDeltaConfigTypes: GetTalliesDeltaConfig['type'][] = [
+  'GetTalliesDeltasFromSenderConfig',
   'GetTalliesDeltasFromHoldersConfig',
   'GetTalliesDeltasFromRecipientConfig',
   'GetTalliesDeltasFromHoldersConfig',
