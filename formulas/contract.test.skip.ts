@@ -533,3 +533,17 @@ testFun.skip(async function assertTransitionsAreValid() {
 const history = () => todo<Arbitrary<Shift[]>>()
 
 testArbImplyTwoSym(and([contractHasExternalShares, isBuySellCycle]), isDecreasedUserBalance)(history())
+
+// interface System {}
+//
+// const isValid: Filter<System> = todo()
+//
+// interface Contract {}
+//
+// interface Model<Origin> {
+//   isValid: () => boolean
+//   isMatching: (target: Origin) =>
+// }
+//
+// const isValidContract = (model: Model) => (contract: Contract) => isValid(model) && isMatching(model, contract)
+//

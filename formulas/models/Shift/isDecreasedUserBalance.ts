@@ -3,10 +3,10 @@ import { getAmountBase } from '../Amount/getAmount'
 import { Shift } from './index'
 
 export const isDecreasedUserBalance = (shifts: Shift[]) => {
-  const [first, next, last] = shifts.slice(-3)
-  const getAmountBaseFirstActionSender = getAmountBase(first.action.sender)
+  const [ante, prev, curr] = shifts.slice(-3)
+  const getAmountBaseFirstActionSender = getAmountBase(ante.action.sender)
   return every([
-    first.action.sender === next.action.sender,
-    getAmountBaseFirstActionSender(first.state) === getAmountBaseFirstActionSender(last.state),
+    ante.action.sender === prev.action.sender,
+    getAmountBaseFirstActionSender(ante.state) === getAmountBaseFirstActionSender(curr.state),
   ])
 }

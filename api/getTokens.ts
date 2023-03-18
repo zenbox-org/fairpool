@@ -12,8 +12,8 @@ export interface GetTokens extends SessionParams {
 }
 
 export const getTokens: TransitionP<GetTokens, State> = ({ query, sessionId }) => async (state) => {
-  const infosUnsorted = await getTokensUnsorted(query)
-  const infos = sortBy(infosUnsorted, t => t.quoteDailyVolume.toNumber())
+  const infosShuffled = await getTokensShuffled(query)
+  const infos = sortBy(infosShuffled, t => t.quoteDailyVolume.toNumber())
   state.sessions[sessionId].page = {
     type: 'TokenInfoTable',
     rows: infos.map(data => ({ data, actions: [] })),
@@ -21,7 +21,7 @@ export const getTokens: TransitionP<GetTokens, State> = ({ query, sessionId }) =
   return parseState(state)
 }
 
-async function getTokensUnsorted(query: string | undefined) {
+async function getTokensShuffled(query: string | undefined) {
   return todo<Token[]>()
 }
 
