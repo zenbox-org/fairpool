@@ -1,16 +1,16 @@
 import { z } from 'zod'
-import { NaturalNumberSchema } from '../../../../../generic/models/NaturalNumber'
-import { scaleFixed, sharesLengthMax } from '../../Fairpool/constants'
+import { Uint256BigIntSchema } from '../../../../../ethereum/models/Uint256BigInt'
+import { scaleFixed, sharesLengthMaxN } from '../../Fairpool/constants'
 import { NumeratorSchema } from '../Numerator'
 
-const ChildrenLengthSchema = NaturalNumberSchema.max(sharesLengthMax)
+const ChildrenLengthSchema = Uint256BigIntSchema.max(sharesLengthMaxN)
 const ChildrenNumeratorsSumSchema = NumeratorSchema
 
 export const ShareBoundsSchema = z.object({
   numeratorMin: NumeratorSchema.default(0n),
   numeratorMax: NumeratorSchema.default(scaleFixed),
-  childrenLengthMin: ChildrenLengthSchema.default(0),
-  childrenLengthMax: ChildrenLengthSchema.default(sharesLengthMax),
+  childrenLengthMin: ChildrenLengthSchema.default(0n),
+  childrenLengthMax: ChildrenLengthSchema.default(sharesLengthMaxN),
   childrenNumeratorsSumMin: ChildrenNumeratorsSumSchema.default(0n),
   childrenNumeratorsSumMax: ChildrenNumeratorsSumSchema.default(scaleFixed),
 })

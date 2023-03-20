@@ -1,9 +1,8 @@
 import { array, boolean, constant, constantFrom, dictionary, record } from 'fast-check'
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
+import { setDenominator } from 'libs/utils/Quotient/QuotientBigInt/QuotientBigIntNativeOperations'
 import { addressArb } from '../../../ethereum/models/Address/addressArb'
-import { BigIntBasicArithmetic } from '../../../utils/bigint/BigIntBasicArithmetic'
 import { quotientBigIntArb } from '../../../utils/Quotient/Arbitrary/quotientBigIntArb'
-import { setDenominator } from '../../../utils/Quotient/setDenominator'
 import { Address } from '../models/Address'
 import { getQuotientsFromNumberNumerators } from '../models/bigint/BigIntQuotientFunctions'
 import { scaleFixed, sharesLengthMax } from '../models/Fairpool/constants'
@@ -13,6 +12,8 @@ import { GetTalliesDeltasFromRecipientConfig } from '../models/GetTalliesDeltaCo
 import { GetTalliesDeltasFromReferralsConfig } from '../models/GetTalliesDeltaConfig/GetTalliesDeltasFromReferralsConfig'
 import { HieroShare, parseHieroShares } from '../models/HieroShare'
 import { getNumeratorsArb } from './getNumeratorsArb'
+
+const setDenominatorToScale = setDenominator(scaleFixed)
 
 export const getTalliesDeltasFromHoldersConfigArb = record<GetTalliesDeltasFromHoldersConfig>({
   type: constant('GetTalliesDeltasFromHoldersConfig'),
@@ -27,7 +28,7 @@ export const getTalliesDeltaFromReferralsConfigArb = (users: Address[]) => {
   const usersArb = constantFrom(...users)
   return record<GetTalliesDeltasFromReferralsConfig>({
     type: constant('GetTalliesDeltasFromReferralsConfig'),
-    discount: quotientBigIntArb,
+    discountNumerator: quotientBigIntArb.map(setDenominatorToScale).map(q => q.numerator),
     referralsMap: dictionary(usersArb, usersArb),
     isRecognizedReferralMap: dictionary(usersArb, boolean()),
   })
@@ -59,7 +60,7 @@ export const getSharesArb = (users: Address[]) => (depth: number) => {
   return getNumeratorsArb(sharesLengthMax + 1)
     .chain(numerators => {
       const quotientsFullRaw = getQuotientsFromNumberNumerators(numerators)
-      const quotientsFull = quotientsFullRaw.map(setDenominator(BigIntBasicArithmetic)(scaleFixed))
+      const quotientsFull = quotientsFullRaw.map(setDenominatorToScale)
       const quotients = quotientsFull.slice(0, -1) // ensure sum(quotients) < 1
       return array(shareWithoutQuotientArb(users)(depth), {
         minLength: quotients.length,

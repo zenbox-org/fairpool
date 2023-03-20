@@ -8,10 +8,10 @@ import { TalliesDelta } from '../models/TalliesDelta'
 const { clampIn, getShare, getQuotientOf, sumAmounts } = BigIntAdvancedOperations
 
 export const getTalliesDeltasFromReferrals = (config: GetTalliesDeltasFromReferralsConfig) => (fairpool: Fairpool, sender: Address, params: GetTalliesDeltaParams) => (quoteDistributed: bigint): TalliesDelta[] => {
-  const { discount, referralsMap } = config
+  const { discountNumerator, referralsMap } = config
   const referral = referralsMap[sender]
   if (referral) {
-    const quoteDistributedToSender = getQuotientOf(discount)(quoteDistributed)
+    const quoteDistributedToSender = getQuotientOf({ numerator: discountNumerator, denominator: fairpool.scale })(quoteDistributed)
     const quoteDistributedToReferral = quoteDistributed - quoteDistributedToSender
     return [
       {

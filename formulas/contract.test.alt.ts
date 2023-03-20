@@ -48,3 +48,9 @@ const senderOfSetOwnerMustBeOwner: Claim<Shift> = {
   premises: [isSetOwner],
   conclusion: senderIsOwner,
 }
+
+const tst = (name: string) => todo()
+
+const tests = [
+  tst('Every share value must be within its bounds'),
+]
