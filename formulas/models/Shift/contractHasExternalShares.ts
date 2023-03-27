@@ -1,5 +1,5 @@
 import { last } from 'remeda'
-import { getFairpoolByAddress } from '../../contract'
+import { getFairpoolByAddress } from '../../model'
 import { isDetrimentalShareForSender } from '../Share/isDetrimentalShareForSender'
 import { Shift } from './index'
 

@@ -2,9 +2,9 @@ import { getDeltas } from '../../../utils/arithmetic/getDeltas'
 import { BigIntBasicArithmetic } from '../../../utils/bigint/BigIntBasicArithmetic'
 import { stringify } from '../../../utils/JSON'
 import { rangeBigInt } from '../../../utils/remeda/rangeBigInt'
-import { getPricingParamsFromFairpool } from '../contract'
 import { getPriceParamsFun } from '../helpers/getPriceParamsFun'
 import { getBaseSupply } from '../helpers/getSupply'
+import { getPricingParamsFromFairpool } from '../model'
 import { Fairpool } from '../models/Fairpool'
 
 export const getPriceStats = (baseLimit: bigint, quoteOffset: bigint) => (quoteSupplyFrom: bigint, quoteSupplyTo: bigint) => {

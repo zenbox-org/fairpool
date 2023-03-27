@@ -11,6 +11,7 @@ import { parseHieroShares } from './models/HieroShare'
 import { parsePriceParams } from './models/PriceParams'
 import { quoteOffsetMin } from './models/QuoteOffset/constants'
 import { parseShares } from './models/Share'
+import { parseState } from './models/State'
 
 if (isLogEnabled) await writeFile('/tmp/stats', getExperimentOutputMin())
 
@@ -32,7 +33,7 @@ export const hieroSharesZero = parseHieroShares([])
 
 export const sharesZero = parseShares([])
 
-export const fairpoolZero = parseFairpool({
+export const arst = parseFairpool({
   address: ZeroAddress,
   ...priceParamsZero,
   balances: balancesZero,
@@ -48,6 +49,11 @@ export const fairpoolZero = parseFairpool({
 
 export const blockchainZero = parseBlockchain({
   balances: balancesZero,
+})
+
+export const stateZero = parseState({
+  blockchain: blockchainZero,
+  fairpools: [arst],
 })
 
 // const getTalliesDeltasWithReferrals: GetTalliesDeltasHierarchical = todo()

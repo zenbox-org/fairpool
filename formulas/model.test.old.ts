@@ -4,8 +4,6 @@ import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbit
 import { Address } from 'libs/ethereum/models/Address'
 import { createPipe, isError, last, map, sort, times, zip } from 'remeda'
 import { validateTransition } from '../../divide-and-conquer/models/ParserTransition/parseTransitionViaFilters'
-import { testArbImplyTwoSym } from '../../divide-and-conquer/models/Prop/testArb'
-import { and } from '../../generic/models/Filter'
 import { Mutator, MutatorV } from '../../generic/models/Mutator'
 import { BigIntArrayComparisons } from '../../utils/arithmetic/order'
 import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
@@ -35,11 +33,11 @@ import { uint256Arb } from './arbitraries/uint256Arb'
 import { assertBalanceDiffs } from './assertBalanceDiffs'
 import { cleanState } from './clean'
 import { quoteOffsetMultiplierMaxGetter, quoteOffsetMultiplierMin } from './constants'
-import { buy, buyA, getBalancesLocalD, getBaseDeltasFromNumerators, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, selloff } from './contract'
 import { alice, base, bob, contract, quote, quoteDeltaDefault, stateDefault } from './default'
 import { getAmountsBQ, getBalancesBQ } from './helpers'
 import { getAmountD } from './helpers/getAmount'
 import { getBaseSupply, getQuoteSupply } from './helpers/getSupply'
+import { buy, buyA, getBalancesLocalD, getBaseDeltasFromNumerators, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, selloff } from './model'
 import { Action } from './models/Action'
 import { Buy } from './models/Action/BaseAction/Buy'
 import { Balance } from './models/Balance'
@@ -50,9 +48,6 @@ import { BigIntQuotientFunctions } from './models/bigint/BigIntQuotientFunctions
 import { Fairpool } from './models/Fairpool'
 import { PrePriceParams } from './models/PrePriceParams'
 import { Shift } from './models/Shift'
-import { contractHasExternalShares } from './models/Shift/contractHasExternalShares'
-import { isBuySellCycle } from './models/Shift/isBuySellCycle'
-import { isDecreasedUserBalance } from './models/Shift/isDecreasedUserBalance'
 import { parseState, State } from './models/State'
 import { parseTransition } from './models/Transition'
 
@@ -531,19 +526,3 @@ testFun.skip(async function assertTransitionsAreValid() {
 // in a contract with non-zero external shares a buy-sell cycle must lead to a decreased quote balance of user
 // getQuoteAmount(sender)(started) > getQuoteAmount(sender)(sold),
 const history = () => todo<Arbitrary<Shift[]>>()
-
-testArbImplyTwoSym(and([contractHasExternalShares, isBuySellCycle]), isDecreasedUserBalance)(history())
-
-// interface System {}
-//
-// const isValid: Filter<System> = todo()
-//
-// interface Contract {}
-//
-// interface Model<Origin> {
-//   isValid: () => boolean
-//   isMatching: (target: Origin) =>
-// }
-//
-// const isValidContract = (model: Model) => (contract: Contract) => isValid(model) && isMatching(model, contract)
-//
