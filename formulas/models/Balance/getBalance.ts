@@ -1,8 +1,8 @@
-import { Address } from '../../../../ethereum/models/Address'
 import { getFairpool } from '../../model'
 import { State } from '../State'
 import { getBalanceD } from './helpers'
 import { Balance } from './index'
+import { Address } from '../Address'
 
 export type GetBalance = (address: Address) => (state: State) => Balance
 
