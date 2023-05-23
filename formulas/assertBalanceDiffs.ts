@@ -1,12 +1,12 @@
 import { uniqWith } from 'remeda'
-import { Address as Address } from '../../ethereum/models/Address'
 import { getFintGenTupleKey } from '../../finance/models/FintGenTuple/getFintGenTupleKey'
 import { BigIntAllAssertions } from '../../utils/bigint/BigIntAllAssertions'
 import { isEqualBy } from '../../utils/lodash'
 import { getAmountD } from './helpers/getAmount'
 import { Amount } from './models/Amount'
 import { Balance } from './models/Balance'
-import { State } from './models/State' // type Source = 'base' | 'quote'
+import { State } from './models/State'
+import { Address } from './models/Address'
 
 // type Source = 'base' | 'quote'
 type BalanceGetter = (state: State) => Balance[]

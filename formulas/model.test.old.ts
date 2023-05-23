@@ -1,7 +1,6 @@
 import { expect, test } from '@jest/globals'
 import { bigInt, record } from 'fast-check'
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
-import { Address } from 'libs/ethereum/models/Address'
 import { createPipe, isError, last, map, sort, times, zip } from 'remeda'
 import { validateTransition } from '../../divide-and-conquer/models/ParserTransition/parseTransitionViaFilters'
 import { Mutator, MutatorV } from '../../generic/models/Mutator'
@@ -50,6 +49,7 @@ import { PrePriceParams } from './models/PrePriceParams'
 import { Shift } from './models/Shift'
 import { parseState, State } from './models/State'
 import { parseTransition } from './models/Transition'
+import { Address } from './models/Address'
 
 const { zero, one, fromNumber, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
 const { sum, sumAmounts, halve, clamp, clampIn, getShare, getDeltas } = BigIntAdvancedOperations
