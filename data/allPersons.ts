@@ -27,17 +27,17 @@ const addPersonN = mapPersonN(addPerson)
 
 const addPersonU = mapPersonU(addPerson)
 
-function addPersonFLPE(firstname: string, lastname: string, nickname = firstname, person: Optional<Person, 'uid' | 'name' | 'nickname' | 'language' | 'contacts'> = {}, language = English, contacts = personal) {
+function addPersonFLPE(firstname: string, lastname: string, nickname = firstname, person: Optional<Person, 'id' | 'name' | 'nickname' | 'language' | 'contacts'> = {}, language = English, contacts = personal) {
   return addPersonFL(firstname, lastname, nickname, language, contacts, person)
 }
 
-function addPersonFLPR(firstname: string, lastname: string, nickname = firstname, person: Optional<Person, 'uid' | 'name' | 'nickname' | 'language' | 'contacts'> = {}, language = Russian, contacts = personal) {
+function addPersonFLPR(firstname: string, lastname: string, nickname = firstname, person: Optional<Person, 'id' | 'name' | 'nickname' | 'language' | 'contacts'> = {}, language = Russian, contacts = personal) {
   return addPersonFL(firstname, lastname, nickname, language, contacts, person)
 }
 
 export function addPersonFreelancer(url: Url, shortname: string | undefined) {
   return addPerson({
-    uid: getIdFromUrl(url),
+    id: getIdFromUrl(url),
     shortname,
     contacts: [url],
     language: English,
@@ -47,7 +47,7 @@ export function addPersonFreelancer(url: Url, shortname: string | undefined) {
 export const OlgaKulakova = addPersonFL('Olga', 'Kulakova', 'Ольга', Russian)
 
 export const TamaraOdonata = addPerson({
-  uid: 'TamaraOdonata',
+  id: 'TamaraOdonata',
   name: 'Tamara Odonata',
   shortname: 'Тамара',
   contacts: personal,
@@ -55,7 +55,7 @@ export const TamaraOdonata = addPerson({
 })
 
 export const AnastasiaAsheylova = addPerson({
-  uid: 'AnastasiaAsheylova',
+  id: 'AnastasiaAsheylova',
   name: 'Anastasia Asheylova',
   shortname: 'Настя',
   contacts: personal,
@@ -63,7 +63,7 @@ export const AnastasiaAsheylova = addPerson({
 })
 
 export const AnnaWhiteMagic = addPerson({
-  uid: 'AnnaWhiteMagic',
+  id: 'AnnaWhiteMagic',
   name: 'Anna',
   shortname: 'Аня',
   contacts: personal,
@@ -71,7 +71,7 @@ export const AnnaWhiteMagic = addPerson({
 })
 
 export const RossKP = addPerson({
-  uid: 'RossKP',
+  id: 'RossKP',
   name: 'Ross',
   shortname: 'Ross',
   contacts: personal,
@@ -139,7 +139,7 @@ export const NikitaLezhankin = addPersonFL('Никита', 'Лежанкин', u
   'https://t.me/iporf',
   'https://t.me/Nikson777',
 ], {
-  uid: 'NikitaLezhankin',
+  id: 'NikitaLezhankin',
 })
 
 export const ProInvesting = addPersonN('antoniusatori', Russian, [
@@ -154,7 +154,7 @@ export const GreasonTV = addPersonN('Greason', English, [
 export const AlexanderLeskov = addPersonFL('Александр', 'Лесков', undefined, Russian, [
   tg('@dfdsfsdfsdf'), // yes, it's real
 ], {
-  uid: 'AlexanderLeskov',
+  id: 'AlexanderLeskov',
 })
 
 export const FocusedAlpha = addPersonU('FocusedAlpha', English, [
@@ -164,7 +164,7 @@ export const FocusedAlpha = addPersonU('FocusedAlpha', English, [
 export const IlyaBelashov = addPersonFL('Илья', 'Белашов', undefined, Russian, [
   'https://www.instagram.com/belashov_ilya',
 ], {
-  uid: 'IlyaBelashov',
+  id: 'IlyaBelashov',
 })
 
 export const CopperPitch = addPersonFL('Copper', 'Pitch', undefined, English, [
@@ -175,13 +175,13 @@ export const CopperPitch = addPersonFL('Copper', 'Pitch', undefined, English, [
 export const AlexanderCraft = addPersonFL('Александр', 'Крафт', undefined, Russian, [
   'https://vk.com/trading_kraft',
 ], {
-  uid: 'AlexanderCraft',
+  id: 'AlexanderCraft',
 })
 
 export const AnatoliLos = addPersonFL('Анатолий', '', undefined, Russian, [
   tg('@AnatoLiLos'),
 ], {
-  uid: 'AnatoliLos',
+  id: 'AnatoliLos',
 })
 
 export const eOne = addPersonN('eOne', Russian, [
@@ -193,7 +193,7 @@ export const eOne = addPersonN('eOne', Russian, [
 export const ThisIsCrypto = addPersonFL('Сергей', '', undefined, Russian, [
   tg('@kopirax'),
 ], {
-  uid: 'ThisIsCrypto',
+  id: 'ThisIsCrypto',
 })
 
 export const JordanVoorhees = addPersonFL('Jordan', 'Voorhees', undefined, English, [

@@ -16,7 +16,7 @@ export const PersonsSchema = z.array(PersonSchema)
   .superRefine(getDuplicatesRefinement('Person', parsePersonUid))
 
 export const PersonUidSchema = PersonSchema.pick({
-  uid: true,
+  id: true,
 })
 
 export type Person = z.infer<typeof PersonSchema>
