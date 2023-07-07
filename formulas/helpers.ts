@@ -4,7 +4,6 @@ import { getTotalSupplyF } from './helpers/getTotalSupply'
 import { Asset } from './models/Asset'
 import { getBalanceR } from './models/Balance/helpers'
 import { Fint } from './models/Fint'
-import { State } from './models/State'
 
 const { sumAmounts } = BigIntAdvancedOperations
 
@@ -26,8 +25,3 @@ export const getAmountsBQ = (baseAsset: Asset, quoteAsset: Asset) => (wallet: Ad
 }
 
 export const getBaseSupplyActual = getTotalSupplyF
-
-export const logState = (state: State) => {
-  console.dir(state, { depth: null })
-  return state
-}
