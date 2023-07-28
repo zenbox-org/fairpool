@@ -5,4 +5,6 @@
 
 // testArbImplyTwoSym(and([contractHasExternalShares, isBuySellCycle]), isDecreasedUserBalance)(history())
 
-export default {}
+const placeholder = {}
+
+export default placeholder

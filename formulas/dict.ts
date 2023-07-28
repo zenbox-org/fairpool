@@ -48,4 +48,6 @@ assert.equal(
   addCurried(1)(2)
 )
 
-export default {}
+const placeholder = {}
+
+export default placeholder

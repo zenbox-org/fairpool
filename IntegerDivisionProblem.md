@@ -7,7 +7,7 @@
   * quoteSupply = x
   * baseSupply = y
 * Alice calls a buy() function with msg.value = quoteDeltaProposed
-* Contract calls getBuyDeltas to get a pair of (baseDelta, quoteDelta) 
+* Contract calls getBuyDeltas to get a pair of (baseDelta, quoteDelta)
   * getBuyDeltas calls getBaseSupply
 * Contract updates its state:
   * quoteSupplyNew = quoteSupply + baseDelta
@@ -28,7 +28,7 @@
 * [Non-Linear Optimization Library](https://nlopt.readthedocs.io/)
 * [Diophantine equation](https://en.wikipedia.org/wiki/Diophantine_equation)
 * Output a table of baseSupply for each quoteSupply
-  * Interesting: baseSupply(k * (n + 1)) - baseSupply(k * n) == k * baseLimit / quoteOffset - 1
+  * Interesting: baseSupply(k *(n + 1)) - baseSupply(k* n) == k * baseLimit / quoteOffset - 1
     * Holds for large n as well
 * Higher scale -> More optimal pairs
 
@@ -51,4 +51,4 @@
     * Use an algorithm for solving a Diophantine equation
 * Find a pair of integers
   * Options
-    * https://math.stackexchange.com/q/1991605
+    * <https://math.stackexchange.com/q/1991605>

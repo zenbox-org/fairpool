@@ -3,7 +3,7 @@
 Fairpool formulas contain:
 
 * The primary formula for calculating the baseDelta and quoteDelta ([link](#basedelta-and-quotedelta))
-* The secondary formulas for calculating other variables, derived from the primary formula 
+* The secondary formulas for calculating other variables, derived from the primary formula
 
 ## Overview
 
@@ -31,7 +31,7 @@ In other words, if the contract is filled with ETH already, the speculators can 
 
 ## Distribution
 
-When a user sells the tokens, the base & quote balances of the contract are reduced. 
+When a user sells the tokens, the base & quote balances of the contract are reduced.
 
 * `baseSupplyNext = baseSupplyPrev - baseDelta`.
 * `quoteSupplyNext = quoteSupplyPrev - quoteDelta`
@@ -76,7 +76,7 @@ Notes:
 * Share owner must be able to reduce the bounds for changing its properties
 * Parent share owner must be able to increase the child share bounds
 * Share `numerator` must be within bounds (`numeratorMax`, `numeratorMin`)
-* Share owner must not be able to set its quotient to 
+* Share owner must not be able to set its quotient to
 
 ## baseDelta and quoteDelta
 
