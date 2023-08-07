@@ -2,7 +2,7 @@ import { test } from '@jest/globals'
 import { integer } from 'fast-check'
 import { BN } from '../../../bn'
 import { bn } from '../../../bn/utils'
-import { expect } from '../../../utils/chai'
+import { expect } from '../../../chai/init'
 import { getBaseFromQuote, getQuoteFromBase } from './conversion'
 
 function getDiff(base: BN, speed: BN, scale: BN) {
