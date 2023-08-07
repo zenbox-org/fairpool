@@ -1,5 +1,5 @@
+import { toFrontendAmountBND } from '../../../../bignumber-bn/conversions'
 import { BN } from '../../../../bn'
-import { toFrontendAmountBND } from '../../../../utils/BigNumber/conversions'
 import { BuyFormValues } from '../BuyFormValues'
 import { BuyParams } from '../BuyParams'
 

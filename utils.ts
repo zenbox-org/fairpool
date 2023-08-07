@@ -1,6 +1,6 @@
 import { BigNumberish } from 'ethers'
+import { toFrontendAmountBND } from '../bignumber-bn/conversions'
 import { getShare as getShareOriginal } from '../bn/utils'
-import { toFrontendAmountBND } from '../utils/BigNumber/conversions'
 import { BaseDecimals, QuoteDecimals, QuoteScale, ShareScale, WeightDecimals, WeightScale } from './constants'
 
 export const toFrontendBaseScale = toFrontendAmountBND(BaseDecimals)

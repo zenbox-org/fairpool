@@ -1,4 +1,4 @@
-import { asPercent, toRenderedAmountBNS } from '../../../utils/BigNumber/conversions'
+import { asPercent, toRenderedAmountBNS } from '../../../bignumber-bn/conversions'
 import { num } from '../../../utils/BigNumber/utils'
 import { TokenParams } from '../TokenParams'
 

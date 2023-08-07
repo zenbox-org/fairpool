@@ -1,6 +1,6 @@
+import { toBackendAmountBND } from '../../../../bignumber-bn/conversions'
 import { BN } from '../../../../bn'
 import { bn } from '../../../../bn/utils'
-import { toBackendAmountBND } from '../../../../utils/BigNumber/conversions'
 import { num } from '../../../../utils/BigNumber/utils'
 import { BuyFormValues } from '../BuyFormValues'
 import { BuyParams } from '../BuyParams'

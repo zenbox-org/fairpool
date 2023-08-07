@@ -1,5 +1,5 @@
+import { toFrontendAmountBND } from '../../../bignumber-bn/conversions'
 import { PrevNextMaybe } from '../../../generic/models/PrevNext'
-import { toFrontendAmountBND } from '../../../utils/BigNumber/conversions'
 import { BaseDecimals, QuoteDecimals } from '../../constants'
 import { TradeEvent } from '../TradeEvent'
 

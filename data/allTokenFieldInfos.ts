@@ -1,5 +1,5 @@
 import { TFunction } from 'next-i18next'
-import { toRenderedAmountBNS } from '../../utils/BigNumber/conversions'
+import { toRenderedAmountBNS } from '../../bignumber-bn/conversions'
 import { SlopeScale } from '../constants'
 import { TokenFieldInfo } from '../models/TokenFieldInfo'
 import { TokenParams } from '../models/TokenParams'
