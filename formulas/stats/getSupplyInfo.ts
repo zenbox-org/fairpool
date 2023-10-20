@@ -1,6 +1,6 @@
 import { concat } from 'lodash-es'
 import { identity } from 'remeda'
-import { Mutator } from '../../../generic/models/Mutator'
+import { Modifier } from '../../../generic/models/Modifier'
 import { rangeBigInt } from '../../../utils/remeda/rangeBigInt'
 import { toString } from '../../../utils/string'
 import { getBaseSupply, getQuoteSupply } from '../helpers/getSupply'
@@ -10,7 +10,7 @@ interface ValueStat { value: bigint, valueEnc: bigint, valueEncDec: bigint, diff
 interface SupplyStat {baseSupply: ValueStat, quoteSupply: ValueStat}
 interface SupplyInfo { input: PriceParams, output: SupplyStat[] }
 
-export const getValueStat = (encode: Mutator<bigint>, decode: Mutator<bigint>) => (value: bigint) => {
+export const getValueStat = (encode: Modifier<bigint>, decode: Modifier<bigint>) => (value: bigint) => {
   const valueEnc = encode(value)
   const valueEncDec = decode(valueEnc)
   const diff = value - valueEncDec

@@ -8,7 +8,7 @@ import { Share } from '../Share'
 const keysDenied: readonly (keyof Share)[] = ['name', 'parent']
 
 export const validatePostSetShareNumerator = (action: Action) => (prev: Share, next: Share) => {
-  const getStatic = omit<Share, keyof Share>(['numerator'])
+  const getStatic = omit<keyof Share>(['numerator'])
   const prevStatic = getStatic(prev)
   const nextStatic = getStatic(next)
   assertEq(prevStatic, nextStatic, 'prevStatic', 'nextStatic', { keysAllowed: ['numerator'] }, 'Only some keys are allowed to be modified')

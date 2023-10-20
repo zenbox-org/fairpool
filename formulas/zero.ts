@@ -33,7 +33,7 @@ export const hieroSharesZero = parseHieroShares([])
 
 export const sharesZero = parseShares([])
 
-export const arst = parseFairpool({
+export const fairpoolZero = parseFairpool({
   address: ZeroAddress,
   ...priceParamsZero,
   balances: balancesZero,
@@ -53,7 +53,7 @@ export const blockchainZero = parseBlockchain({
 
 export const stateZero = parseState({
   blockchain: blockchainZero,
-  fairpools: [arst],
+  fairpools: [fairpoolZero],
 })
 
 // const getTalliesDeltasWithReferrals: GetTalliesDeltasHierarchical = todo()

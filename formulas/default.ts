@@ -5,7 +5,7 @@ import { parseFairpool } from './models/Fairpool'
 import { scaleFixed } from './models/Fairpool/constants'
 import { quoteOffsetMin } from './models/QuoteOffset/constants'
 import { State } from './models/State'
-import { arst, blockchainZero } from './zero'
+import { blockchainZero, fairpoolZero } from './zero'
 
 const { zero, one, fromNumber, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
 const { sum, sumAmounts, halve, clamp, clampIn, getShare, getDeltas } = BigIntAdvancedOperations
@@ -25,7 +25,7 @@ export const getShareScaledDefault = getShare(scaleFixed)
 export const getShareScaledDefaultPips = getShareScaledDefault(fromNumber(10000))
 
 export const fairpoolDefault = parseFairpool({
-  ...arst,
+  ...fairpoolZero,
   quoteOffset: 2n * quoteOffsetMin,
   address: contract,
   quoteSupply: zero,

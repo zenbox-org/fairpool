@@ -378,4 +378,4 @@ export const getFairpool = getFairpoolAt(0)
 
 export const getFairpoolQuoteOffset = (state: State) => getFairpool(state).quoteOffset
 
-export const getPricingParamsFromFairpool = pick<Fairpool, keyof Fairpool>(['baseLimit', 'quoteOffset'])
+export const getPricingParamsFromFairpool = pick<keyof Fairpool>(['baseLimit', 'quoteOffset'])

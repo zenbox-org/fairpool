@@ -3,7 +3,7 @@ import { bigInt, record } from 'fast-check'
 import { Arbitrary } from 'fast-check/lib/types/check/arbitrary/definition/Arbitrary'
 import { createPipe, isError, last, map, sort, times, zip } from 'remeda'
 import { validateTransition } from '../../divide-and-conquer/models/ParserTransition/parseTransitionViaFilters'
-import { Mutator, MutatorV } from '../../generic/models/Mutator'
+import { Modifier, ModifierV } from '../../generic/models/Modifier'
 import { NonEmptyArray } from '../../utils/array/ensureNonEmptyArray'
 import { assertEq, assertTwo } from '../../utils/assert'
 import { BigIntAdvancedOperations } from '../../utils/bigint/BigIntAdvancedOperations'
@@ -39,6 +39,7 @@ import { getBaseSupply, getQuoteSupply } from './helpers/getSupply'
 import { buy, buyA, getBalancesLocalD, getBaseDeltasFromNumerators, getBaseSupplySuperlinearMin, getBaseSupplySuperlinearMinF, getFairpool, getPricingParamsFromFairpool, getQuoteDeltasFromBaseDeltaNumeratorsFullRangeF, getQuoteDeltasFromBaseDeltas, getQuoteDeltasFromBaseDeltasF, getQuoteSupplyFor, getQuoteSupplyMax, getQuoteSupplyMaxByDefinition, selloff } from './model'
 import { Action } from './models/Action'
 import { Buy } from './models/Action/BaseAction/Buy'
+import { Address } from './models/Address'
 import { Balance } from './models/Balance'
 import { getBalancesBase, getBalancesQuote } from './models/Balance/getBalances'
 import { getBalanceD } from './models/Balance/helpers'
@@ -49,7 +50,6 @@ import { PrePriceParams } from './models/PrePriceParams'
 import { Shift } from './models/Shift'
 import { parseState, State } from './models/State'
 import { parseTransition } from './models/Transition'
-import { Address } from './models/Address'
 
 const { zero, one, fromNumber, add, sub, mul, div, mod, min, max, abs, sqrt, eq, lt, gt, lte, gte } = BigIntBasicArithmetic
 const { sum, sumAmounts, halve, clamp, clampIn, getShare, getDeltas } = BigIntAdvancedOperations
@@ -57,7 +57,7 @@ const { getQuotientsFromNumberNumerators, getBoundedArrayFromQuotients, getValue
 const { isAscending, isDescending, isAscendingStrict, isDescendingStrict } = BigIntArrayComparisons
 const assert = BigIntAllAssertions
 
-type ActionFunc = Mutator<State>
+type ActionFunc = Modifier<State>
 
 /** helpers */
 const getPricingParams = ({ quoteOffsetMultiplierProposed, baseLimit }: PrePriceParams) => {
@@ -85,8 +85,8 @@ const getBalancesHistoryBaseAlice = createPipe(map(getBalancesBase), map(getBala
 const getAmountsHistoryBaseAlice = createPipe(getBalancesHistoryBaseAlice, map((b: Balance) => b.amount))
 const sumAmountsHistoryBaseAlice = createPipe(getAmountsHistoryBaseAlice, sum)
 const filename = getHardcodedFilename('uni.test.ts')
-const run = <Val, Args extends unknown[]>(mutators: MutatorV<Val, Args>[], ...args: Args) => (value: Val) => {
-  const mutatorsWithSeparator = mutators.map<MutatorV<Val, Args>>(mutator => (obj, ...args) => {
+const run = <Val, Args extends unknown[]>(mutators: ModifierV<Val, Args>[], ...args: Args) => (value: Val) => {
+  const mutatorsWithSeparator = mutators.map<ModifierV<Val, Args>>(mutator => (obj, ...args) => {
     debug(filename, run, '>>>')
     // debug(__filename, run, getBalancesStats(obj))
     return mutator(obj, ...args)
