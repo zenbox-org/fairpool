@@ -1,6 +1,6 @@
 import { chooseOneWrappedSimpleStatic } from 'libs/decimaker/choose'
 import { OptionN } from 'libs/decimaker/models/Option'
-import { Asserter } from '../../../decimaker/models/Asserter'
+import { Asserter } from '../../../utils/Asserter'
 import { isValidModel } from '../helpers/isValidModel'
 import { getClaims } from '../models/Claim/getClaims'
 import { getGenerator } from '../models/Generator/Shifts'

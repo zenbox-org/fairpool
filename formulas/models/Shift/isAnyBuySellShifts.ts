@@ -1,4 +1,4 @@
-import { ZodParser } from '../../../../decimaker/models/Parser'
+import { ZodParser } from '../../../../utils/Parser'
 import { todo } from '../../../../utils/todo'
 import { BuyShift, BuyShiftsSchema } from './BuyShift'
 import { Shift } from './index'
