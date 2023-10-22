@@ -1,6 +1,6 @@
-import { Mapper } from '../../../../../generic/models/Mapper'
 import { Claim } from '../../../../../programming/models/Claim'
 import { req } from '../../../../../programming/models/Requirement'
+import { Mapper } from '../../../../../utils/Mapper'
 import { allEqual } from '../../../../../utils/remeda/allEqual'
 import { todo } from '../../../../../utils/todo'
 import { Fairpool } from '../../Fairpool'

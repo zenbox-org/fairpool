@@ -1,6 +1,6 @@
 import { concat } from 'lodash-es'
 import { identity } from 'remeda'
-import { Modifier } from '../../../generic/models/Modifier'
+import { Modifier } from '../../../utils/Modifier'
 import { rangeBigInt } from '../../../utils/remeda/rangeBigInt'
 import { toString } from '../../../utils/string'
 import { getBaseSupply, getQuoteSupply } from '../helpers/getSupply'
