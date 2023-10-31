@@ -1,4 +1,4 @@
-import { NonEmptyArray } from '../../../../utils/array/ensureNonEmptyArray'
+import { NonEmptyArray } from '../../../../utils/NonEmptyArray'
 
 export type ShareRoot = bigint
 

@@ -1,6 +1,7 @@
 import { last } from 'remeda'
-import { isNonEmptyArray } from '../../../../utils/array/ensureNonEmptyArray'
 import { assertEq, assertIncludes, assertNeq } from '../../../../utils/assert'
+
+import { isNonEmptyArray } from '../../../../utils/NonEmptyArray/predicates'
 import { assertNumber } from '../../../../utils/number/NumberAllAssertions'
 import { Action, ActionType } from '../Action'
 import { AddShare } from '../Action/BaseAction/AddShare'
