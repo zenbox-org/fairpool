@@ -5,7 +5,7 @@ import { z } from 'zod'
 
 export interface InfluencerTag {
   id: string
-  parent?: InfluencerTag
+  parent?: InfluencerTag | undefined
 }
 
 export const InfluencerTagSchema: z.ZodSchema<InfluencerTag> = z.lazy(() => z.object({
