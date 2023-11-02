@@ -1,12 +1,13 @@
+import { expect } from '@jest/globals'
 import { uniqWith } from 'remeda'
 import { getFintGenTupleKey } from '../../finance/models/FintGenTuple/getFintGenTupleKey'
 import { BigIntAllAssertions } from '../../utils/bigint/BigIntAllAssertions'
 import { isEqualBy } from '../../utils/lodash'
 import { getAmountD } from './helpers/getAmount'
+import { Address } from './models/Address'
 import { Amount } from './models/Amount'
 import { Balance } from './models/Balance'
 import { State } from './models/State'
-import { Address } from './models/Address'
 
 // type Source = 'base' | 'quote'
 type BalanceGetter = (state: State) => Balance[]

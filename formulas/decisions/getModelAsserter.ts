@@ -1,3 +1,4 @@
+import { expect } from '@jest/globals'
 import { chooseOneWrappedSimpleStatic } from 'libs/decimaker/choose'
 import { OptionN } from 'libs/decimaker/models/Option'
 import { Asserter } from '../../../utils/Asserter'
